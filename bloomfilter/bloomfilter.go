@@ -34,6 +34,27 @@ func (b BloomFilter) Add(data []byte) {
 		targetByte := bit / 8     // bajt u kome se bit nalazi
 		bitMask := 1 << (bit % 8) // maska
 		index := int(targetByte)
-		b.Data[index] = b.Data[index] | byte(bitMask)
+		b.Data[index] = b.Data[index] | byte(bitMask) // bitwise OR kako bi upisali jedinicu
 	}
+}
+
+// Citanje elementa
+// data -> element za citanje
+func (b BloomFilter) Read(data []byte) bool {
+	for _, hashFunction := range b.HashFunctions {
+		// Isto kao kod pisanja
+		hashed := hashFunction.Hash(data)
+		bit := hashed % uint64(b.M)
+
+		targetByte := bit / 8
+		bitMask := 1 << (bit % 8)
+		index := int(targetByte)
+
+		// bitwise AND kako bi proverili da li je bit na datoj poziciji
+		if b.Data[index]&byte(bitMask) == 0 {
+			return false
+		}
+	}
+
+	return true
 }
