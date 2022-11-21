@@ -15,8 +15,8 @@ func NewBloomFilter(expectedElements int, falsePositiveRate float64) *BloomFilte
 	k := CalculateK(expectedElements, m)                 // broj hash funkcija
 
 	hashFunctions := CreateHashFunctions(k) // hash funkcije
-	bitsNum := math.Ceil(float64(m) / 8)    // broj bajtova
-	data := make([]byte, int(bitsNum))      // niz velicine m
+	bytesNum := math.Ceil(float64(m) / 8)   // broj bajtova
+	data := make([]byte, int(bytesNum))     // niz velicine m
 
 	b := BloomFilter{data, hashFunctions}
 
