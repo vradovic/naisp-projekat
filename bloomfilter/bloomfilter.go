@@ -1,6 +1,10 @@
 package bloomfilter
 
-import "math"
+import (
+	"encoding/gob"
+	"math"
+	"os"
+)
 
 type BloomFilter struct {
 	M             uint
@@ -57,4 +61,30 @@ func (b BloomFilter) Read(data []byte) bool {
 	}
 
 	return true
+}
+
+func (b BloomFilter) Save(filePath string) {
+	file, err := os.Create(filePath)
+	if err != nil {
+		panic("error during file creation")
+	}
+
+	encoder := gob.NewEncoder(file)
+	encoder.Encode(b)
+	file.Close()
+}
+
+func Load(filePath string, b *BloomFilter) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		panic("error when opening file")
+	}
+
+	decoder := gob.NewDecoder(file)
+	err2 := decoder.Decode(b)
+	if err2 != nil {
+		panic("error while decoding")
+	}
+
+	file.Close()
 }
