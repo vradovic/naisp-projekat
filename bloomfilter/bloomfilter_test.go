@@ -1,6 +1,9 @@
 package bloomfilter
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 type readTest struct {
 	arg      []byte
@@ -14,7 +17,7 @@ var readTests = []readTest{
 	{[]byte("god"), true}}
 
 func TestRead(t *testing.T) {
-	var bloomFilter = NewBloomFilter(1000, 0.01)
+	var bloomFilter = NewBloomFilter(1000, 0.001)
 	bloomFilter.Add([]byte("dog"))
 	bloomFilter.Add([]byte("god"))
 	bloomFilter.Add([]byte("hippo"))
@@ -30,5 +33,30 @@ func TestRead(t *testing.T) {
 		if output := bloomFilter.Read(test.arg); output != test.expected {
 			t.Errorf("Got %t, expected %t", output, test.expected)
 		}
+	}
+}
+
+func TestLoad(t *testing.T) {
+	var bloomFilter = NewBloomFilter(1000, 0.001)
+	bloomFilter.Add([]byte("apple"))
+	bloomFilter.Add([]byte("pear"))
+	bloomFilter.Add([]byte("orange"))
+
+	filePath := "./test.gob"
+	bloomFilter.Save(filePath)
+
+	newB := new(BloomFilter)
+	Load(filePath, newB)
+
+	err := os.Remove(filePath)
+	if err != nil {
+		panic("error while removing file")
+	}
+
+	got := newB.Read([]byte("orange"))
+	want := true
+
+	if got != want {
+		t.Errorf("Got %t, expected %t", got, want)
 	}
 }
