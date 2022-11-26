@@ -1,5 +1,7 @@
 package cms
 
+import "github.com/vradovic/naisp-projekat/util"
+
 type Cms struct {
 	M             uint
 	K             uint
@@ -33,4 +35,19 @@ func (c Cms) Add(data []byte) {
 
 		c.Table[row][col] += 1
 	}
+}
+
+// Citanje brojaca elementa
+func (c Cms) Read(data []byte) uint64 {
+	counters := make([]uint64, c.K)
+
+	for row, hashFunction := range c.HashFunctions {
+		hash := hashFunction.Hash(data)
+		col := hash % uint64(c.M)
+
+		counters[row] = c.Table[row][col]
+	}
+
+	min := util.MinSliceUnsigned(counters)
+	return min
 }
