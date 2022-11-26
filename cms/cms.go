@@ -1,6 +1,11 @@
 package cms
 
-import "github.com/vradovic/naisp-projekat/util"
+import (
+	"encoding/gob"
+	"os"
+
+	"github.com/vradovic/naisp-projekat/util"
+)
 
 type Cms struct {
 	M             uint // kolone
@@ -50,4 +55,16 @@ func (c Cms) Read(data []byte) uint64 {
 
 	min := util.MinSliceUnsigned(counters)
 	return min
+}
+
+func (c Cms) Save(filePath string) error {
+	file, err := os.Create(filePath)
+
+	if err == nil {
+		encoder := gob.NewEncoder(file)
+		encoder.Encode(c)
+		file.Close()
+	}
+
+	return err
 }
