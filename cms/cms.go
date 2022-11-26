@@ -57,6 +57,7 @@ func (c Cms) Read(data []byte) uint64 {
 	return min
 }
 
+// Cuvanje
 func (c Cms) Save(filePath string) error {
 	file, err := os.Create(filePath)
 
@@ -67,4 +68,27 @@ func (c Cms) Save(filePath string) error {
 	}
 
 	return err
+}
+
+// Ucitavanje
+func Load(filePath string) (*Cms, error) {
+	c := &Cms{}
+
+	file, file_err := os.Open(filePath)
+
+	if file_err != nil {
+		file.Close()
+		return c, file_err
+	}
+
+	decoder := gob.NewDecoder(file)
+	decode_err := decoder.Decode(c)
+
+	if decode_err != nil {
+		file.Close()
+		return c, decode_err
+	}
+
+	file.Close()
+	return c, nil
 }
