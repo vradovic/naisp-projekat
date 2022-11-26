@@ -3,8 +3,8 @@ package cms
 import "github.com/vradovic/naisp-projekat/util"
 
 type Cms struct {
-	M             uint
-	K             uint
+	M             uint // kolone
+	K             uint // redovi
 	Table         [][]uint64
 	HashFunctions []HashWithSeed
 }
