@@ -2,7 +2,7 @@ package memtable
 
 // Struktura memorijske tabele (SkipList ili B-tree)
 type Structure interface {
-	Write(key string, value []byte) bool
+	Write(r Record) bool
 	Read(key string) []byte
 	Delete(key string) bool
 }
