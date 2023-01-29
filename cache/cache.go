@@ -2,14 +2,10 @@ package cache
 
 import (
 	"container/list"
-)
+	"fmt"
 
-// type Record struct {
-// 	Key       string
-// 	Value     []byte
-// 	Timestamp []byte
-// 	Tombstone bool
-// }
+	"github.com/vradovic/naisp-projekat/record"
+)
 
 type Cache struct {
 	capacity   int
@@ -18,15 +14,17 @@ type Cache struct {
 	linkedList list.List
 }
 
+// Set capacity only
 func NewCache(cap int) *Cache {
 	m := make(map[string]*list.Element)
 	l := list.New()
-	c := Cache{cap, 0, m, *l}
+	size := 0
+	c := Cache{cap, size, m, *l}
 	return &c
 }
 
 // adding records we know exist in database
-func (c Cache) AddRecord(rec Record) {
+func (c *Cache) AddRecord(rec record.Record) {
 	element, ok := c.hashMap[rec.Key]
 	if ok {
 		c.linkedList.Remove(element)
@@ -34,7 +32,7 @@ func (c Cache) AddRecord(rec Record) {
 		c.hashMap[rec.Key] = c.linkedList.Front()
 	} else {
 		if c.size == c.capacity {
-			lastElement := c.linkedList.Back().Value.(Record)
+			lastElement := c.linkedList.Back().Value.(record.Record)
 			delete(c.hashMap, lastElement.Key)
 			c.linkedList.Remove(c.linkedList.Back())
 			c.linkedList.PushFront(rec)
@@ -49,7 +47,7 @@ func (c Cache) AddRecord(rec Record) {
 
 // doesn't change cache if there isn't a record with that key because that record maybe doesn't exist in the database
 // returns ture if it is found in cache
-func (c Cache) LookForRecord(rec Record) bool {
+func (c *Cache) LookForRecord(rec record.Record) bool {
 	_, ok := c.hashMap[rec.Key]
 	if ok {
 		c.AddRecord(rec)
@@ -59,7 +57,8 @@ func (c Cache) LookForRecord(rec Record) bool {
 	}
 }
 
-func (c Cache) DeleteRecord(rec Record) {
+// Delete records from cache
+func (c *Cache) DeleteRecord(rec record.Record) {
 	element, ok := c.hashMap[rec.Key]
 	if ok {
 		delete(c.hashMap, rec.Key)
@@ -69,4 +68,12 @@ func (c Cache) DeleteRecord(rec Record) {
 	} else {
 		return
 	}
+}
+
+// Printing cache
+func (c *Cache) Print() {
+	for e := c.linkedList.Front(); e != nil; e = e.Next() {
+		fmt.Println(e.Value)
+	}
+	fmt.Println()
 }
