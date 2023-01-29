@@ -1,4 +1,4 @@
-package memtable
+package record
 
 // Struktura zapisa u memoriji
 type Record struct {
