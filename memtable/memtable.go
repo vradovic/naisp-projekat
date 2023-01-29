@@ -34,6 +34,8 @@ func (m *Memtable) Write(r record.Record) bool {
 
 	if m.currentSize > m.maxSize {
 		m.Flush()
+		m.currentSize = 0
+		m.structure = NewSkipList(5)
 	}
 
 	return success
