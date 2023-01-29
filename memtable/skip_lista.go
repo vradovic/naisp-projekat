@@ -7,10 +7,8 @@ import (
 )
 
 type SkipListNode struct {
-	key     int
-	value   []byte
+	record  Record
 	forward []*SkipListNode
-	status  int
 }
 
 type SkipList struct {
@@ -19,36 +17,42 @@ type SkipList struct {
 	header    *SkipListNode
 }
 
-func newSkipListNode(key, level int, value []byte) *SkipListNode {
-	n := SkipListNode{key: key, value: value}
+func newSkipListNode(r Record, level int) *SkipListNode {
+	n := SkipListNode{record: r}
 	for i := 0; i <= level; i++ {
 		n.forward = append(n.forward, nil)
 	}
-	n.status = 0
 	return &n
 }
 
-func newSkipList(maxHeight int) *SkipList {
+func NewSkipList(maxHeight int) *SkipList {
 	s := SkipList{maxHeight: maxHeight}
 	s.level = 0
-	s.header = newSkipListNode(-1, maxHeight, nil)
+	r := Record{Key: "*"}
+	s.header = newSkipListNode(r, maxHeight)
 	return &s
 }
 
-func (s *SkipList) insertElement(key int, value []byte) {
+func (s *SkipList) Write(r Record) bool {
 	update := make([]*SkipListNode, 0, s.maxHeight)
 	for i := 0; i <= s.maxHeight; i++ {
 		update = append(update, nil)
 	}
 	current := s.header
 	for i := s.level; i > -1; i-- {
-		for (current.forward[i] != nil) && (current.forward[i].key < key) {
+		for (current.forward[i] != nil) && (current.forward[i].record.Key < r.Key) {
 			current = current.forward[i]
 		}
 		update[i] = current
 	}
 	current = current.forward[0]
-	if (current == nil) || (current.key != key) {
+	if current != nil && current.record.Key == r.Key {
+		current.record.Value = r.Value
+		current.record.Timestamp = r.Timestamp
+		current.record.Tombstone = r.Tombstone
+
+		return true
+	} else if (current == nil) || (current.record.Key != r.Key) {
 		rlevel := s.randomLevel()
 		if rlevel > s.level {
 			for i := s.level + 1; i <= rlevel; i++ {
@@ -56,12 +60,16 @@ func (s *SkipList) insertElement(key int, value []byte) {
 			}
 			s.level = rlevel
 		}
-		n := newSkipListNode(key, rlevel, value)
+		n := newSkipListNode(r, rlevel)
 		for i := 0; i <= rlevel; i++ {
 			n.forward[i] = update[i].forward[i]
 			update[i].forward[i] = n
 		}
+
+		return true
 	}
+
+	return false
 }
 
 func (s SkipList) randomLevel() int {
@@ -69,7 +77,7 @@ func (s SkipList) randomLevel() int {
 	x1 := rand.NewSource(time.Now().UnixNano())
 	y1 := rand.New(x1)
 	for ; y1.Int31n(2) == 1; level++ {
-		fmt.Print("broj")
+		// fmt.Print("broj")
 		if level >= s.maxHeight {
 			return level
 		}
@@ -77,35 +85,41 @@ func (s SkipList) randomLevel() int {
 	return level
 }
 
-func (s SkipList) searchElement(key int) {
+func (s SkipList) Read(key string) []byte {
 	current := s.header
 	for i := s.level; i > -1; i-- {
-		for (current.forward[i] != nil) && (current.forward[i].key < key) {
+		for (current.forward[i] != nil) && (current.forward[i].record.Key < key) {
 			current = current.forward[i]
 		}
 	}
 	current = current.forward[0]
-	if current != nil && current.key == key && current.status == 0 {
-		fmt.Print("Found key :")
-		fmt.Print(key)
-		fmt.Print("\n")
+	if current != nil && current.record.Key == key && !current.record.Tombstone {
+		// fmt.Print("Found key :")
+		// fmt.Print(key)
+		// fmt.Print("\n")
+		return current.record.Value
 	}
+
+	return []byte("")
 }
 
-func (s *SkipList) deleteElement(key int) {
+func (s *SkipList) Delete(key string) bool {
 	current := s.header
 	for i := s.level; i > -1; i-- {
-		for (current.forward[i] != nil) && (current.forward[i].key < key) {
+		for (current.forward[i] != nil) && (current.forward[i].record.Key < key) {
 			current = current.forward[i]
 		}
 	}
 	current = current.forward[0]
-	if current != nil && current.key == key {
-		current.status = 1
+	if current != nil && current.record.Key == key {
+		current.record.Tombstone = true
+		return true
 	}
+
+	return false
 }
 
-func (s SkipList) displayList() {
+func (s SkipList) DisplayList() {
 	fmt.Print("\n*****Skip List******\n")
 	head := s.header
 	for lvl := 0; lvl <= s.level; lvl++ {
@@ -113,8 +127,8 @@ func (s SkipList) displayList() {
 		fmt.Println(lvl)
 		node := head.forward[lvl]
 		for node != nil {
-			if node.status == 0 {
-				fmt.Print(node.key)
+			if !node.record.Tombstone {
+				fmt.Print(node.record.Key)
 				fmt.Print(" ")
 			}
 			node = node.forward[lvl]
