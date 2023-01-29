@@ -1,6 +1,10 @@
 package memtable
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/vradovic/naisp-projekat/record"
+)
 
 type Memtable struct {
 	currentSize uint      // Trenutna velicina
@@ -21,7 +25,7 @@ func (m *Memtable) Flush() {
 	// TODO: Potrebno flushovati u data fajl
 }
 
-func (m *Memtable) Write(r Record) bool {
+func (m *Memtable) Write(r record.Record) bool {
 	success := m.structure.Write(r)
 
 	if success {

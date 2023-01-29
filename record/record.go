@@ -1,6 +1,6 @@
-package memtable
+package record
 
-// Struktura sloga u memorijskoj tabeli
+// Struktura sloga u memoriji
 type Record struct {
 	Key       string
 	Value     []byte

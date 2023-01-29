@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/vradovic/naisp-projekat/record"
 )
 
 type SkipListNode struct {
-	record  Record
+	record  record.Record
 	forward []*SkipListNode
 }
 
@@ -17,7 +19,7 @@ type SkipList struct {
 	header    *SkipListNode
 }
 
-func newSkipListNode(r Record, level int) *SkipListNode {
+func newSkipListNode(r record.Record, level int) *SkipListNode {
 	n := SkipListNode{record: r}
 	for i := 0; i <= level; i++ {
 		n.forward = append(n.forward, nil)
@@ -28,12 +30,12 @@ func newSkipListNode(r Record, level int) *SkipListNode {
 func NewSkipList(maxHeight int) *SkipList {
 	s := SkipList{maxHeight: maxHeight}
 	s.level = 0
-	r := Record{Key: "*"}
+	r := record.Record{Key: "*"}
 	s.header = newSkipListNode(r, maxHeight)
 	return &s
 }
 
-func (s *SkipList) Write(r Record) bool {
+func (s *SkipList) Write(r record.Record) bool {
 	update := make([]*SkipListNode, 0, s.maxHeight)
 	for i := 0; i <= s.maxHeight; i++ {
 		update = append(update, nil)
