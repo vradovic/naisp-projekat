@@ -12,9 +12,17 @@ type Memtable struct {
 	structure   Structure // Struktura podataka (SkipList ili B stablo)
 }
 
-func NewMemtable(maxSize uint) *Memtable {
+func NewMemtable(maxSize uint, structureName string) *Memtable {
 	var currentSize uint = 0
-	structure := NewSkipList(5)
+	var structure Structure
+
+	switch structureName {
+	case "skiplist":
+		structure = NewSkipList(5)
+	default:
+		structure = NewSkipList(5)
+	}
+
 	m := Memtable{currentSize, maxSize, structure}
 
 	return &m
@@ -34,7 +42,9 @@ func (m *Memtable) Write(r record.Record) bool {
 
 	if m.currentSize > m.maxSize {
 		m.Flush()
+
 		m.currentSize = 0
+
 		m.structure = NewSkipList(5)
 	}
 
