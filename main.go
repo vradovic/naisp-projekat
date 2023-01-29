@@ -6,4 +6,5 @@ import (
 
 func main() {
 	fmt.Println("Hello world")
+	c := NewCache(4)
 }
