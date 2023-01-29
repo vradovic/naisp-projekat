@@ -5,4 +5,6 @@ type Memtable struct {
 	structure Structure // Struktura podataka (SkipList ili B stablo)
 }
 
-func (m Memtable) Flush()
+func (m Memtable) Flush() {
+	// TODO
+}
