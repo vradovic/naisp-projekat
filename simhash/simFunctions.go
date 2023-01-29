@@ -1,4 +1,4 @@
-package main
+package simhash
 
 import (
 	"crypto/md5"
@@ -19,7 +19,22 @@ func ToBinary(s string) string {
 	return res
 }
 
-func main() {
-	fmt.Println(GetMD5Hash("helloasdwad"))
-	fmt.Println(ToBinary(GetMD5Hash("helloasdwad")))
+func xorBytes(a, b []byte) []byte {
+	result := make([]byte, len(a))
+	for i := range a {
+		result[i] = a[i] ^ b[i]
+	}
+	return result
+}
+
+func countOnes(slice []byte) int {
+	count := 0
+	for _, b := range slice {
+		for i := 0; i < 8; i++ {
+			if (b>>uint(i))&1 == 1 {
+				count++
+			}
+		}
+	}
+	return count
 }
