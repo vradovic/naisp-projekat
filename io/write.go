@@ -6,8 +6,9 @@ import (
 	"github.com/vradovic/naisp-projekat/wal"
 )
 
-// PUT (Novi slog i brisanje sloga)
-func Write(key string, value []byte, timestamp int64, tombstone bool, log *wal.WAL, table *memtable.Memtable) bool {
+// PUT (Novi slog / azuriranje sloga)
+func Put(key string, value []byte, timestamp int64, log *wal.WAL, table *memtable.Memtable) bool {
+	tombstone := false
 	err := log.Write([]byte(key), value, timestamp, tombstone)
 	if err != nil {
 		return false
@@ -16,4 +17,18 @@ func Write(key string, value []byte, timestamp int64, tombstone bool, log *wal.W
 	record := record.Record{Key: key, Value: value, Timestamp: timestamp, Tombstone: tombstone}
 
 	return table.Write(record)
+}
+
+// DELETE (Brisanje sloga)
+func Delete(key string, timestamp int64, log *wal.WAL, table *memtable.Memtable) bool {
+	value := []byte("")
+	tombstone := true
+	err := log.Write([]byte(key), value, timestamp, tombstone)
+	if err != nil {
+		return false
+	}
+
+	record := record.Record{Key: key, Value: value, Timestamp: timestamp, Tombstone: tombstone}
+
+	return table.Delete(record)
 }
