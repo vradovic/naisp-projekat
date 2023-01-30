@@ -7,33 +7,43 @@ import (
 )
 
 type Memtable struct {
-	currentSize uint      // Trenutna velicina
-	maxSize     uint      // Maksimalna dozvoljena velicina
-	structure   Structure // Struktura podataka (SkipList ili B stablo)
+	maxSize   uint      // Maksimalna dozvoljena velicina
+	structure Structure // Struktura podataka (SkipList ili B stablo)
 }
 
-func NewMemtable(maxSize uint) *Memtable {
-	var currentSize uint = 0
-	structure := NewSkipList(5)
-	m := Memtable{currentSize, maxSize, structure}
+func NewMemtable(maxSize uint, structureName string) *Memtable {
+	var structure Structure
+
+	switch structureName {
+	case "skiplist":
+		structure = NewSkipList(5)
+	default:
+		structure = NewSkipList(5)
+	}
+
+	m := Memtable{maxSize, structure}
 
 	return &m
 }
 
+// FLush na disk
 func (m *Memtable) Flush() {
-	fmt.Println("Memtable flushed!")
+	records := m.structure.GetItems() // Uzmi sve elemente iz strukture
+	for _, record := range records {
+		fmt.Println(record.Key)
+	}
+
 	// TODO: Potrebno flushovati u data fajl
+	fmt.Println("Memtable flushed!")
 }
 
 func (m *Memtable) Write(r record.Record) bool {
 	success := m.structure.Write(r)
 
-	if success {
-		m.currentSize++
-	}
-
-	if m.currentSize > m.maxSize {
+	if m.structure.GetSize() >= m.maxSize {
 		m.Flush()
+
+		m.structure = NewSkipList(5)
 	}
 
 	return success
@@ -43,6 +53,14 @@ func (m *Memtable) Read(key string) []byte {
 	return m.structure.Read(key)
 }
 
-func (m *Memtable) Delete(key string) bool {
-	return m.structure.Delete(key)
+func (m *Memtable) Delete(r record.Record) bool {
+	success := m.structure.Delete(r)
+
+	if m.structure.GetSize() >= m.maxSize {
+		m.Flush()
+
+		m.structure = NewSkipList(5)
+	}
+
+	return success
 }
