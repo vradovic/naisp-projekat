@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	WAL_FILE        = "wal.log"
+	WAL_FILE        = "../resources/wal.log"
 	MAX_ENTRY_SIZE  = 1024
 	CRC_SIZE        = 4
 	TIMESTAMP_SIZE  = 8
