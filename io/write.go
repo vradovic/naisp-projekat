@@ -1,7 +1,7 @@
 package io
 
 import (
-	"github.com/vradovic/naisp-projekat/globals"
+	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/record"
 	"github.com/vradovic/naisp-projekat/structures"
 	"github.com/vradovic/naisp-projekat/wal"
@@ -11,7 +11,7 @@ import (
 func Put(key string, value []byte, timestamp int64) bool {
 	tombstone := false
 
-	log, err := wal.NewWAL(globals.WAL_PATH)
+	log, err := wal.NewWAL(config.GlobalConfig.WalPath)
 	if err != nil {
 		return false
 	}
@@ -31,7 +31,7 @@ func Delete(key string, timestamp int64) bool {
 	value := []byte("")
 	tombstone := true
 
-	log, err := wal.NewWAL(globals.WAL_PATH)
+	log, err := wal.NewWAL(config.GlobalConfig.WalPath)
 	if err != nil {
 		return false
 	}

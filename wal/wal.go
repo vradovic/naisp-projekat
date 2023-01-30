@@ -6,7 +6,7 @@ import (
 	"hash/crc32"
 	"os"
 
-	"github.com/vradovic/naisp-projekat/globals"
+	"github.com/vradovic/naisp-projekat/config"
 )
 
 type WAL struct {
@@ -31,13 +31,13 @@ func NewWAL(filePath string) (*WAL, error) {
 
 func (w *WAL) Write(key, value []byte, timestamp int64, thumbstone bool) error {
 	// Calculate the payload length
-	payloadLength := globals.CRC_SIZE + globals.TIMESTAMP_SIZE + globals.TOMBSTONE_SIZE + globals.KEY_SIZE_SIZE + globals.VALUE_SIZE_SIZE + len(key) + len(value)
+	payloadLength := config.GlobalConfig.CrcSize + config.GlobalConfig.TimestampSize + config.GlobalConfig.TombstoneSize + config.GlobalConfig.KeySizeSize + config.GlobalConfig.ValueSizeSize + len(key) + len(value)
 
 	// Allocate the payload buffer
 	payload := make([]byte, payloadLength)
 
 	// Write the timestamp to the payload
-	binary.LittleEndian.PutUint64(payload[globals.TIMESTAMP_START:globals.TIMESTAMP_START+globals.TIMESTAMP_SIZE], uint64(timestamp))
+	binary.LittleEndian.PutUint64(payload[config.GlobalConfig.TimestampStart:config.GlobalConfig.TimestampStart+config.GlobalConfig.TimestampSize], uint64(timestamp))
 
 	// Write the thumbstone flag to the payload
 	var thumbstoneByte byte
@@ -46,23 +46,23 @@ func (w *WAL) Write(key, value []byte, timestamp int64, thumbstone bool) error {
 	} else {
 		thumbstoneByte = 0
 	}
-	payload[globals.TOMBSTONE_START] = thumbstoneByte
+	payload[config.GlobalConfig.TombstoneStart] = thumbstoneByte
 
 	// Write the key size to the payload
-	binary.LittleEndian.PutUint64(payload[globals.KEY_SIZE_START:globals.KEY_SIZE_START+globals.KEY_SIZE_SIZE], uint64(len(key)))
+	binary.LittleEndian.PutUint64(payload[config.GlobalConfig.KeySizeStart:config.GlobalConfig.KeySizeStart+config.GlobalConfig.KeySizeSize], uint64(len(key)))
 
 	// Write the value size to the payload
-	binary.LittleEndian.PutUint64(payload[globals.VALUE_SIZE_START:globals.VALUE_SIZE_START+globals.VALUE_SIZE_SIZE], uint64(len(value)))
+	binary.LittleEndian.PutUint64(payload[config.GlobalConfig.ValueSizeStart:config.GlobalConfig.ValueSizeStart+config.GlobalConfig.ValueSizeSize], uint64(len(value)))
 
 	// Write the key and value to the payload
-	copy(payload[globals.KEY_START:globals.KEY_START+len(key)], key)
-	copy(payload[globals.KEY_START+len(key):], value)
+	copy(payload[config.GlobalConfig.KeyStart:config.GlobalConfig.KeyStart+len(key)], key)
+	copy(payload[config.GlobalConfig.KeyStart+len(key):], value)
 
 	// Compute the CRC
 	crc := CRC32(value)
 
 	// Write the CRC to the payload
-	binary.LittleEndian.PutUint32(payload[globals.CRC_START:globals.CRC_START+globals.CRC_SIZE], crc)
+	binary.LittleEndian.PutUint32(payload[config.GlobalConfig.CrcStart:config.GlobalConfig.CrcStart+config.GlobalConfig.CrcSize], crc)
 
 	// Write the payload to the WAL
 	w.writer.Write(payload)
