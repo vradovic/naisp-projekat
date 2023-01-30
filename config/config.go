@@ -45,13 +45,13 @@ func NewConfig(filename string) *Config {
 		config.TokenNumber = TOKEN_NUMBER
 		config.TokenRefreshTime = TOKEN_REFRESH_TIME
 
-	} else {
-		err = yaml.Unmarshal(yamlFile, &config)
-		if err != nil {
-			fmt.Printf("Unmarshal: %v", err)
-		}
-
-		return &config
 	}
+
+	err = yaml.Unmarshal(yamlFile, &config)
+	if err != nil {
+		fmt.Printf("Unmarshal: %v", err)
+	}
+
+	return &config
 
 }
