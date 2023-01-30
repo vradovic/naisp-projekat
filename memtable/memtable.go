@@ -2,6 +2,7 @@ package memtable
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/record"
@@ -23,6 +24,17 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 	}
 
 	m := Memtable{maxSize, structure}
+
+	// Proveri da li wal postoji i nije prazan
+	// Ako wal postoji i nije prazan, onda memtable treba da se oporavi
+	walInfo, err := os.Stat(config.GlobalConfig.WalPath)
+	if err != nil {
+		panic("Log file error")
+	}
+
+	if walInfo.Size() <= 0 {
+		// recover
+	}
 
 	return &m
 }
