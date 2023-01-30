@@ -1,0 +1,9 @@
+bloomExpectedElements : 1000
+bloomFalsePositive : 0.0001
+cacheCapacity : 100
+cmsEpsilon : 0.001
+cmsDelta : 0.001
+memtableSize : 200
+skipListHeight : 5
+tokenNumber : 6
+tokenRefreshTime : 2
