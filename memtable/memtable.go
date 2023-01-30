@@ -3,6 +3,7 @@ package memtable
 import (
 	"fmt"
 
+	"github.com/vradovic/naisp-projekat/globals"
 	"github.com/vradovic/naisp-projekat/record"
 )
 
@@ -16,9 +17,9 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 
 	switch structureName {
 	case "skiplist":
-		structure = NewSkipList(5)
+		structure = NewSkipList(globals.SKIP_LIST_MAX_HEIGHT)
 	default:
-		structure = NewSkipList(5)
+		structure = NewSkipList(globals.SKIP_LIST_MAX_HEIGHT)
 	}
 
 	m := Memtable{maxSize, structure}
@@ -43,7 +44,7 @@ func (m *Memtable) Write(r record.Record) bool {
 	if m.structure.GetSize() >= m.maxSize {
 		m.Flush()
 
-		m.structure = NewSkipList(5)
+		m.structure = NewSkipList(globals.SKIP_LIST_MAX_HEIGHT)
 	}
 
 	return success
@@ -59,7 +60,7 @@ func (m *Memtable) Delete(r record.Record) bool {
 	if m.structure.GetSize() >= m.maxSize {
 		m.Flush()
 
-		m.structure = NewSkipList(5)
+		m.structure = NewSkipList(globals.SKIP_LIST_MAX_HEIGHT)
 	}
 
 	return success

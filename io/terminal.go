@@ -8,40 +8,39 @@ import (
 )
 
 func GetInput(isNewWrite bool) (string, []byte) {
-	reader := bufio.NewReader(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Print("Kljuc: ")
-	key, _ := reader.ReadString('\n')
+	scanner.Scan()
+	key := scanner.Text()
 
 	var value = ""
 	if isNewWrite { // Samo ukoliko je novi zapis
 		fmt.Print("Vrednost: ")
-		value, _ = reader.ReadString('\n')
+		scanner.Scan()
+		value = scanner.Text()
 	}
 
 	return key, []byte(value)
 }
 
 func Menu() error {
-	reader := bufio.NewReader(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
 	for {
 		fmt.Println()
-		fmt.Println('-' * 10)
+		fmt.Println("----------")
 		fmt.Println("1. Write")
 		fmt.Println("2. Read")
 		fmt.Println("3. Delete")
 		fmt.Println("x. Exit")
-		fmt.Println('-' * 10)
+		fmt.Println("----------")
 		fmt.Println()
 
-		fmt.Print('>')
-		input, _, err := reader.ReadRune()
-		if err != nil {
-			return err
-		}
+		fmt.Print(">")
+		scanner.Scan()
 
-		switch input {
-		case '1': // PUT
+		switch scanner.Text() {
+		case "1": // PUT
 			key, value := GetInput(true)
 			timestamp := time.Now().UnixNano()
 
@@ -51,10 +50,10 @@ func Menu() error {
 			} else {
 				fmt.Println("Write failed.")
 			}
-		case '2':
+		case "2": // READ
 			// TODO: Read path...
 			fmt.Println("Reading...")
-		case '3':
+		case "3": // DELETE
 			key, _ := GetInput(false)
 			timestamp := time.Now().UnixNano()
 
@@ -64,7 +63,7 @@ func Menu() error {
 			} else {
 				fmt.Println("Delete failed.")
 			}
-		case 'x':
+		case "x": // EXIT
 			return nil
 		default:
 			fmt.Println("Invalid input.")
