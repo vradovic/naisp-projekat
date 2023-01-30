@@ -1,9 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"github.com/vradovic/naisp-projekat/config"
+	"github.com/vradovic/naisp-projekat/io"
+	"github.com/vradovic/naisp-projekat/structures"
 )
 
 func main() {
-	fmt.Println("Hello world")
+	config.Init()
+	structures.Init()
+	err := io.Menu()
+	if err != nil {
+		panic("Greska")
+	}
 }
