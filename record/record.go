@@ -4,6 +4,6 @@ package record
 type Record struct {
 	Key       string
 	Value     []byte
-	Timestamp []byte
+	Timestamp int64
 	Tombstone bool
 }
