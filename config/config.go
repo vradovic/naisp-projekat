@@ -78,17 +78,18 @@ func NewConfig(filename string) *Config {
 		config.KeySizeSize = KEY_SIZE_SIZE
 		config.ValueSizeSize = VALUE_SIZE_SIZE
 		config.CrcStart = CRC_START
-		config.TimestampStart = config.CrcStart + config.CrcSize
-		config.TombstoneStart = config.TimestampStart + config.TimestampSize
-		config.KeySizeStart = config.TombstoneStart + config.TombstoneSize
-		config.ValueSizeStart = config.KeySizeStart + config.KeySizeSize
-		config.KeyStart = config.ValueSizeStart + config.ValueSizeSize
 	}
 
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
 		fmt.Printf("Unmarshal: %v", err)
 	}
+
+	config.TimestampStart = config.CrcStart + config.CrcSize
+	config.TombstoneStart = config.TimestampStart + config.TimestampSize
+	config.KeySizeStart = config.TombstoneStart + config.TombstoneSize
+	config.ValueSizeStart = config.KeySizeStart + config.KeySizeSize
+	config.KeyStart = config.ValueSizeStart + config.ValueSizeSize
 
 	return &config
 
