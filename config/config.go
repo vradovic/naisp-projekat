@@ -7,6 +7,18 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	EXPECTED_EL         = 1000
+	FALSE_POSITIVE_RATE = 0.001
+	CMS_EPSILON         = 0.001
+	CMS_DELTA           = 0.001
+	CACHE_CAP           = 100
+	MEMTABLE_SIZE       = 200
+	SKIP_LIST_HEIGHT    = 10
+	TOKEN_NUMBER        = 20
+	TOKEN_REFRESH_TIME  = 2
+)
+
 type Config struct {
 	BloomExpectedElements  int     `yaml:"bloomExpectedElements"`
 	BloomFalsePositiveRate float64 `yaml:"bloomFalsePositive"`
@@ -16,30 +28,30 @@ type Config struct {
 	MemtableSize           uint    `yaml:"memtableSize"`
 	SkipListHeight         int     `yaml:"skipListHeight"`
 	TokenNumber            int     `yaml:"tokenNumber"`
-	TokenRefreshTime       float64 `yaml:"tokenRefreshTime`
+	TokenRefreshTime       float64 `yaml:"tokenRefreshTime"`
 }
 
 func NewConfig(filename string) *Config {
 	var config Config
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Printf("yamlFile.Get err   #%v ", err)
+		config.BloomExpectedElements = EXPECTED_EL
+		config.BloomFalsePositiveRate = FALSE_POSITIVE_RATE
+		config.CacheCapacity = CACHE_CAP
+		config.CmsDelta = CMS_DELTA
+		config.CmsEpsilon = CMS_EPSILON
+		config.MemtableSize = MEMTABLE_SIZE
+		config.SkipListHeight = SKIP_LIST_HEIGHT
+		config.TokenNumber = TOKEN_NUMBER
+		config.TokenRefreshTime = TOKEN_REFRESH_TIME
+
+	} else {
+		err = yaml.Unmarshal(yamlFile, &config)
+		if err != nil {
+			fmt.Printf("Unmarshal: %v", err)
+		}
+
+		return &config
 	}
 
-	err = yaml.Unmarshal(yamlFile, &config)
-	if err != nil {
-		fmt.Printf("Unmarshal: %v", err)
-	}
-
-	fmt.Println(config.BloomExpectedElements)
-	fmt.Println(config.BloomFalsePositiveRate)
-	fmt.Println(config.CacheCapacity)
-	fmt.Println(config.CmsEpsilon)
-	fmt.Println(config.CmsDelta)
-	fmt.Println(config.MemtableSize)
-	fmt.Println(config.SkipListHeight)
-	fmt.Println(config.TokenNumber)
-	fmt.Println(config.TokenRefreshTime)
-
-	return &config
 }
