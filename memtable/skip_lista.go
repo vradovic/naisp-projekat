@@ -119,12 +119,12 @@ func (s *SkipList) Delete(r record.Record) bool {
 	if current != nil && current.record.Key == r.Key {
 		current.record.Tombstone = true
 		return true
-	} else if current == nil {
+	} else {
 		s.Write(r)
 		return true
 	}
 
-	return false
+	//return false
 }
 
 func (s SkipList) DisplayList() {
