@@ -1,7 +1,10 @@
 package memtable
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/record"
@@ -24,6 +27,20 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 
 	m := Memtable{maxSize, structure}
 
+	// Proveri da li wal postoji i nije prazan
+	// Ako wal postoji i nije prazan, onda memtable treba da se oporavi
+	walInfo, err := os.Stat(config.GlobalConfig.WalPath)
+	if err != nil {
+		panic("Log file error")
+	}
+
+	if walInfo.Size() > 0 {
+		err := m.recover()
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	return &m
 }
 
@@ -44,7 +61,11 @@ func (m *Memtable) Write(r record.Record) bool {
 	if m.structure.GetSize() >= m.maxSize {
 		m.Flush()
 
-		m.structure = NewSkipList(config.GlobalConfig.SkipListHeight)
+		m.structure = NewSkipList(config.GlobalConfig.SkipListHeight) // Nova struktura
+		err := os.Truncate(config.GlobalConfig.WalPath, 0)            // Resetovanje loga
+		if err != nil {
+			return false
+		}
 	}
 
 	return success
@@ -64,4 +85,36 @@ func (m *Memtable) Delete(r record.Record) bool {
 	}
 
 	return success
+}
+
+func (m *Memtable) recover() error {
+	walFile, err := os.Open(config.GlobalConfig.WalPath)
+	if err != nil {
+		return err
+	}
+	defer walFile.Close()
+
+	for {
+		b := make([]byte, config.GlobalConfig.MaxEntrySize)
+		_, e := walFile.Read(b)
+		if e == io.EOF {
+			break
+		} else if e != nil {
+			return e
+		}
+
+		record := record.BytesToRecord(b)
+		var success bool
+		if record.Tombstone {
+			success = m.structure.Delete(record)
+		} else {
+			success = m.structure.Write(record)
+		}
+
+		if !success {
+			return errors.New("recovery fail")
+		}
+	}
+
+	return nil
 }
