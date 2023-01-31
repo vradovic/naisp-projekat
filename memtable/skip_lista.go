@@ -17,6 +17,7 @@ type SkipList struct {
 	maxHeight int
 	level     int
 	header    *SkipListNode
+	Size      uint
 }
 
 func newSkipListNode(r record.Record, level int) *SkipListNode {
@@ -32,6 +33,7 @@ func NewSkipList(maxHeight int) *SkipList {
 	s.level = 0
 	r := record.Record{Key: "*"}
 	s.header = newSkipListNode(r, maxHeight)
+	s.Size = 0
 	return &s
 }
 
@@ -68,6 +70,7 @@ func (s *SkipList) Write(r record.Record) bool {
 			update[i].forward[i] = n
 		}
 
+		s.Size++
 		return true
 	}
 
@@ -105,16 +108,19 @@ func (s SkipList) Read(key string) []byte {
 	return []byte("")
 }
 
-func (s *SkipList) Delete(key string) bool {
+func (s *SkipList) Delete(r record.Record) bool {
 	current := s.header
 	for i := s.level; i > -1; i-- {
-		for (current.forward[i] != nil) && (current.forward[i].record.Key < key) {
+		for (current.forward[i] != nil) && (current.forward[i].record.Key < r.Key) {
 			current = current.forward[i]
 		}
 	}
 	current = current.forward[0]
-	if current != nil && current.record.Key == key {
+	if current != nil && current.record.Key == r.Key {
 		current.record.Tombstone = true
+		return true
+	} else if current == nil {
+		s.Write(r)
 		return true
 	}
 
@@ -137,6 +143,24 @@ func (s SkipList) DisplayList() {
 		}
 		fmt.Print("\n")
 	}
+}
+
+func (s *SkipList) GetItems() []record.Record {
+	head := s.header
+	lvl := 0
+	node := head.forward[lvl]
+	records := make([]record.Record, 1)
+
+	for node != nil {
+		records = append(records, node.record)
+		node = node.forward[lvl]
+	}
+
+	return records
+}
+
+func (s *SkipList) GetSize() uint {
+	return s.Size
 }
 
 //func main() {
