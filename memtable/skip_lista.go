@@ -105,7 +105,7 @@ func (s SkipList) Read(key string) []byte {
 		return current.record.Value
 	}
 
-	return []byte("")
+	return nil
 }
 
 func (s *SkipList) Delete(r record.Record) bool {
