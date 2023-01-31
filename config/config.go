@@ -18,6 +18,7 @@ const (
 	MEMTABLE_SIZE       = 200
 	STRUCTURE_TYPE      = "skiplist"
 	SKIP_LIST_HEIGHT    = 10
+	B_TREE_ORDER        = 3
 	TOKEN_NUMBER        = 20
 	TOKEN_REFRESH_TIME  = 2
 	WAL_PATH            = "resources\\wal.log"
@@ -54,6 +55,7 @@ type Config struct {
 	KeySizeStart           int
 	ValueSizeStart         int
 	KeyStart               int
+	BTreeOrder             int `yaml:"bTreeOrder"`
 }
 
 func NewConfig(filename string) *Config {
@@ -78,6 +80,7 @@ func NewConfig(filename string) *Config {
 		config.KeySizeSize = KEY_SIZE_SIZE
 		config.ValueSizeSize = VALUE_SIZE_SIZE
 		config.CrcStart = CRC_START
+		config.BTreeOrder = B_TREE_ORDER
 	}
 
 	err = yaml.Unmarshal(yamlFile, &config)
