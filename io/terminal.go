@@ -51,8 +51,13 @@ func Menu() error {
 				fmt.Println("Write failed.")
 			}
 		case "2": // READ
-			// TODO: Read path...
-			fmt.Println("Reading...")
+			key, _ := GetInput(false)
+			value := Get(key)
+			if value == nil {
+				fmt.Println("Record not found")
+			} else {
+				fmt.Printf("Record found: %s %s", key, string(value))
+			}
 		case "3": // DELETE
 			key, _ := GetInput(false)
 			timestamp := time.Now().UnixNano()
