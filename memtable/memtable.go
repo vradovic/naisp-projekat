@@ -34,7 +34,7 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 		panic("Log file error")
 	}
 
-	if walInfo.Size() <= 0 {
+	if walInfo.Size() > 0 {
 		err := m.recover()
 		if err != nil {
 			panic(err)
@@ -61,7 +61,11 @@ func (m *Memtable) Write(r record.Record) bool {
 	if m.structure.GetSize() >= m.maxSize {
 		m.Flush()
 
-		m.structure = NewSkipList(config.GlobalConfig.SkipListHeight)
+		m.structure = NewSkipList(config.GlobalConfig.SkipListHeight) // Nova struktura
+		err := os.Truncate(config.GlobalConfig.WalPath, 0)            // Resetovanje loga
+		if err != nil {
+			return false
+		}
 	}
 
 	return success
