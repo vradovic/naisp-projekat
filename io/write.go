@@ -56,5 +56,11 @@ func Delete(key string, timestamp int64) bool {
 
 	record := record.Record{Key: key, Value: value, Timestamp: timestamp, Tombstone: tombstone}
 
-	return structures.Memtable.Delete(record)
+	success := structures.Memtable.Delete(record)
+
+	if success {
+		structures.Cache.DeleteRecord(record)
+	}
+
+	return success
 }
