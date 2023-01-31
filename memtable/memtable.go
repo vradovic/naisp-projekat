@@ -1,7 +1,9 @@
 package memtable
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/vradovic/naisp-projekat/config"
@@ -33,7 +35,10 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 	}
 
 	if walInfo.Size() <= 0 {
-		// recover
+		err := m.recover()
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	return &m
@@ -76,4 +81,36 @@ func (m *Memtable) Delete(r record.Record) bool {
 	}
 
 	return success
+}
+
+func (m *Memtable) recover() error {
+	walFile, err := os.Open(config.GlobalConfig.WalPath)
+	if err != nil {
+		return err
+	}
+	defer walFile.Close()
+
+	for {
+		b := make([]byte, config.GlobalConfig.MaxEntrySize)
+		_, e := walFile.Read(b)
+		if e == io.EOF {
+			break
+		} else if e != nil {
+			return e
+		}
+
+		record := record.BytesToRecord(b)
+		var success bool
+		if record.Tombstone {
+			success = m.structure.Delete(record)
+		} else {
+			success = m.structure.Write(record)
+		}
+
+		if !success {
+			return errors.New("recovery fail")
+		}
+	}
+
+	return nil
 }

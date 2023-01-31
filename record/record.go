@@ -28,9 +28,11 @@ func BytesToRecord(b []byte) Record {
 
 	keySizeBytes := b[config.GlobalConfig.KeySizeStart : config.GlobalConfig.KeySizeStart+config.GlobalConfig.KeySizeSize]
 	keySize := binary.LittleEndian.Uint64(keySizeBytes)
-
 	key := string(b[config.GlobalConfig.KeyStart : int64(config.GlobalConfig.KeyStart)+int64(keySize)])
-	value := b[int64(config.GlobalConfig.KeyStart)+int64(keySize):]
+
+	valueSizeBytes := b[config.GlobalConfig.ValueSizeStart : config.GlobalConfig.ValueSizeStart+config.GlobalConfig.ValueSizeSize]
+	valueSize := binary.LittleEndian.Uint64(valueSizeBytes)
+	value := b[int64(config.GlobalConfig.KeyStart)+int64(keySize) : int64(config.GlobalConfig.KeyStart)+int64(keySize)+int64(valueSize)]
 
 	return Record{Key: key, Value: value, Timestamp: int64(timestamp), Tombstone: tombstone}
 }
