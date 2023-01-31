@@ -10,7 +10,7 @@ cmsEpsilon : 0.001
 cmsDelta : 0.001
 
 # MEMTABLE
-memtableSize : 200
+memtableSize : 5
 structureType : "skiplist"
 skipListHeight : 5
 
