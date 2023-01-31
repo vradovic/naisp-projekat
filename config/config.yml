@@ -11,7 +11,7 @@ cmsDelta : 0.001
 
 # MEMTABLE
 memtableSize : 5
-structureType : "btree"
+structureType : "skiplist"
 skipListHeight : 5
 bTreeOrder : 3
 
