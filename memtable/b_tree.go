@@ -2,19 +2,14 @@ package memtable
 
 import (
 	"fmt"
-)
 
-type Record struct {
-	Key       string
-	Value     []byte
-	Timestamp int64
-	Tombstone bool
-}
+	"github.com/vradovic/naisp-projekat/record"
+)
 
 type BTreeNode struct {
 	leaf   bool
 	child  []*BTreeNode
-	record []*Record
+	record []*record.Record
 }
 
 type BTree struct {
@@ -28,13 +23,13 @@ func newBTreeNode(leaf bool) *BTreeNode {
 	return &n
 }
 
-func newBTree(t int) *BTree {
+func NewBTree(t int) *BTree {
 	b := BTree{t: t, size: 0}
 	b.root = newBTreeNode(true)
 	return &b
 }
 
-func (b *BTree) Write(r Record) bool {
+func (b *BTree) Write(r record.Record) bool {
 	if b.searchBTree(r.Key, nil) {
 		return b.UpdateBTree(r, nil)
 	} else {
@@ -42,7 +37,7 @@ func (b *BTree) Write(r Record) bool {
 	}
 }
 
-func (b *BTree) Delete(r Record) bool {
+func (b *BTree) Delete(r record.Record) bool {
 	if b.searchBTree(r.Key, nil) {
 		r.Tombstone = true
 		return b.UpdateBTree(r, nil)
@@ -52,7 +47,7 @@ func (b *BTree) Delete(r Record) bool {
 	}
 }
 
-func (b *BTree) UpdateBTree(r Record, x *BTreeNode) bool {
+func (b *BTree) UpdateBTree(r record.Record, x *BTreeNode) bool {
 	if x != nil {
 		i := 0
 		for i < len(x.record) && r.Key > x.record[i].Key {
@@ -71,7 +66,7 @@ func (b *BTree) UpdateBTree(r Record, x *BTreeNode) bool {
 	}
 }
 
-func (b *BTree) InsertBTree(r Record) bool {
+func (b *BTree) InsertBTree(r record.Record) bool {
 	root := b.root
 	if len(root.record) == ((2 * b.t) - 1) {
 		temp := newBTreeNode(false)
@@ -86,10 +81,10 @@ func (b *BTree) InsertBTree(r Record) bool {
 	}
 }
 
-func (b *BTree) insertNonFull(root *BTreeNode, r Record) {
+func (b *BTree) insertNonFull(root *BTreeNode, r record.Record) {
 	i := len(root.record) - 1
 	if root.leaf {
-		root.record = append(root.record, &Record{Key: "", Value: nil})
+		root.record = append(root.record, &record.Record{Key: "", Value: nil})
 		for i >= 0 && r.Key < root.record[i].Key {
 			root.record[i+1] = root.record[i]
 			i--
@@ -142,10 +137,10 @@ func (b *BTree) printBTree(x *BTreeNode, l int) {
 }
 
 type RecordList struct {
-	recordList []Record
+	recordList []record.Record
 }
 
-func (b *BTree) GetItems() []Record {
+func (b *BTree) GetItems() []record.Record {
 	list := RecordList{}
 	list.GetRecord(b.root)
 	return list.recordList
@@ -211,7 +206,7 @@ func insertChild(a []*BTreeNode, index int, value *BTreeNode) []*BTreeNode {
 	return a
 }
 
-func insertRecord(a []*Record, index int, value *Record) []*Record {
+func insertRecord(a []*record.Record, index int, value *record.Record) []*record.Record {
 	if len(a) == index {
 		return append(a, value)
 	}
@@ -220,43 +215,43 @@ func insertRecord(a []*Record, index int, value *Record) []*Record {
 	return a
 }
 
-func main() {
+// func main() {
 
-	var tree = newBTree(3)
-	tree.t = 3
-	fmt.Println(tree.Write(Record{Key: "a", Value: []byte("")}))
-	tree.Write(Record{Key: "b", Value: []byte("")})
-	tree.Write(Record{Key: "c", Value: []byte("")})
-	tree.Write(Record{Key: "d", Value: []byte("")})
-	tree.Write(Record{Key: "e", Value: []byte("")})
-	tree.Write(Record{Key: "f", Value: []byte("")})
-	tree.Write(Record{Key: "g", Value: []byte("")})
-	tree.Write(Record{Key: "h", Value: []byte("")})
-	tree.Write(Record{Key: "i", Value: []byte("")})
-	tree.Write(Record{Key: "j", Value: []byte("")})
-	tree.Write(Record{Key: "k", Value: []byte("")})
-	tree.Write(Record{Key: "l", Value: []byte("")})
-	tree.Write(Record{Key: "m", Value: []byte("A")})
-	tree.Write(Record{Key: "n", Value: []byte("")})
-	tree.Write(Record{Key: "o", Value: []byte("")})
-	tree.Write(Record{Key: "p", Value: []byte("")})
-	tree.Write(Record{Key: "r", Value: []byte("")})
-	tree.Write(Record{Key: "s", Value: []byte("")})
-	tree.Write(Record{Key: "t", Value: []byte("")})
-	tree.Write(Record{Key: "u", Value: []byte("")})
-	tree.Write(Record{Key: "v", Value: []byte("")})
-	tree.printBTree(tree.root, 0)
-	fmt.Println(tree.GetSize())
-	fmt.Println(tree.Read("m"))
-	fmt.Println(tree.Read("asc"))
-	fmt.Println(tree.searchBTree("asc", nil))
-	fmt.Println(tree.searchBTree("f", nil))
-	tree.Write(Record{Key: "n", Value: []byte("B")})
-	fmt.Println(tree.Delete(Record{Key: "a", Value: []byte("B")}))
-	fmt.Println(tree.GetSize())
-	tree.Delete(Record{Key: "w", Value: []byte("")})
-	tree.printBTree(tree.root, 0)
-	fmt.Println(tree.GetSize())
-	fmt.Println(tree.GetItems())
-	fmt.Println("Hello world")
-}
+// 	var tree = newBTree(3)
+// 	tree.t = 3
+// 	fmt.Println(tree.Write(record.Record{Key: "a", Value: []byte("")}))
+// 	tree.Write(record.Record{Key: "b", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "c", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "d", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "e", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "f", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "g", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "h", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "i", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "j", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "k", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "l", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "m", Value: []byte("A")})
+// 	tree.Write(record.Record{Key: "n", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "o", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "p", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "r", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "s", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "t", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "u", Value: []byte("")})
+// 	tree.Write(record.Record{Key: "v", Value: []byte("")})
+// 	tree.printBTree(tree.root, 0)
+// 	fmt.Println(tree.GetSize())
+// 	fmt.Println(tree.Read("m"))
+// 	fmt.Println(tree.Read("asc"))
+// 	fmt.Println(tree.searchBTree("asc", nil))
+// 	fmt.Println(tree.searchBTree("f", nil))
+// 	tree.Write(record.Record{Key: "n", Value: []byte("B")})
+// 	fmt.Println(tree.Delete(record.Record{Key: "a", Value: []byte("B")}))
+// 	fmt.Println(tree.GetSize())
+// 	tree.Delete(record.Record{Key: "w", Value: []byte("")})
+// 	tree.printBTree(tree.root, 0)
+// 	fmt.Println(tree.GetSize())
+// 	fmt.Println(tree.GetItems())
+// 	fmt.Println("Hello world")
+// }
