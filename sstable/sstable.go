@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/vradovic/naisp-projekat/bloomfilter"
 	"github.com/vradovic/naisp-projekat/merkle"
@@ -184,8 +185,8 @@ func writeBloomFilter(sstable *SSTable) {
 // poziv za kreiranje SSTable-a
 func NewSSTable(allRecords *[]record.Record) {
 	var sstable SSTable
-	sstable.path = "resources\\file.db"  // dodati random naziva na ime
-	file, err := os.Create(sstable.path) // nekom metodom davati imena, npr u ms vreme ili tako nes
+	sstable.path = "resources\\file" + fmt.Sprint(time.Now().UnixNano()) + ".db" // dodati random naziva na ime
+	file, err := os.Create(sstable.path)                                         // nekom metodom davati imena, npr u ms vreme ili tako nes
 	if err != nil {
 		panic(err)
 	}

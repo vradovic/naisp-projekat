@@ -21,11 +21,8 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 	switch structureName {
 	case "skiplist":
 		structure = NewSkipList(config.GlobalConfig.SkipListHeight)
-<<<<<<< HEAD
-=======
 	case "btree":
 		structure = NewBTree(config.GlobalConfig.BTreeOrder)
->>>>>>> 17e4529ea576f06c8f08651d6413e6a9795ce2c5
 	default:
 		structure = NewSkipList(config.GlobalConfig.SkipListHeight)
 	}
@@ -66,10 +63,6 @@ func (m *Memtable) Write(r record.Record) bool {
 	if m.structure.GetSize() >= m.maxSize {
 		m.Flush()
 
-<<<<<<< HEAD
-		m.structure = NewSkipList(config.GlobalConfig.SkipListHeight) // Nova struktura
-		err := os.Truncate(config.GlobalConfig.WalPath, 0)            // Resetovanje loga
-=======
 		switch config.GlobalConfig.StructureType { // Nova struktura
 		case "skiplist":
 			m.structure = NewSkipList(config.GlobalConfig.SkipListHeight)
@@ -78,7 +71,6 @@ func (m *Memtable) Write(r record.Record) bool {
 		}
 
 		err := os.Truncate(config.GlobalConfig.WalPath, 0) // Resetovanje loga
->>>>>>> 17e4529ea576f06c8f08651d6413e6a9795ce2c5
 		if err != nil {
 			return false
 		}
@@ -97,16 +89,12 @@ func (m *Memtable) Delete(r record.Record) bool {
 	if m.structure.GetSize() >= m.maxSize {
 		m.Flush()
 
-<<<<<<< HEAD
-		m.structure = NewSkipList(config.GlobalConfig.SkipListHeight)
-=======
 		switch config.GlobalConfig.StructureType { // Nova struktura
 		case "skiplist":
 			m.structure = NewSkipList(config.GlobalConfig.SkipListHeight)
 		case "btree":
 			m.structure = NewBTree(config.GlobalConfig.BTreeOrder)
 		}
->>>>>>> 17e4529ea576f06c8f08651d6413e6a9795ce2c5
 	}
 
 	return success
