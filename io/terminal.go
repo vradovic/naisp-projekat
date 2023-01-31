@@ -10,13 +10,13 @@ import (
 func GetInput(isNewWrite bool) (string, []byte) {
 	scanner := bufio.NewScanner(os.Stdin)
 
-	fmt.Print("Kljuc: ")
+	fmt.Print("Key: ")
 	scanner.Scan()
 	key := scanner.Text()
 
 	var value = ""
 	if isNewWrite { // Samo ukoliko je novi zapis
-		fmt.Print("Vrednost: ")
+		fmt.Print("Value: ")
 		scanner.Scan()
 		value = scanner.Text()
 	}
