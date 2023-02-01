@@ -3,7 +3,6 @@ package sstable
 import (
 	"bufio"
 	"encoding/binary"
-	"fmt"
 	"os"
 
 	"github.com/vradovic/naisp-projekat/bloomfilter"
@@ -55,8 +54,9 @@ func writeBlock(recordByte *[]byte, path string) {
 // pocetak upisa, prima sve "slogove" za upis
 func writeSSTable(allRecords *[]record.Record, sstable *SSTable) {
 	var block_size uint
-	fmt.Print("Unesite velicinu data bloka: ") // bira se velicina bloka kojim ce biti odvojene sektori za pretragu
-	fmt.Scan(&block_size)
+	// fmt.Print("Unesite velicinu data bloka: ") // bira se velicina bloka kojim ce biti odvojene sektori za pretragu
+	// fmt.Scan(&block_size)
+	block_size = 2
 	for i, record := range *allRecords {
 
 		// upis u merkle
@@ -134,17 +134,19 @@ func writeHeader(sstable *SSTable) {
 // upis zone indeksa
 func writeIndex(sstable *SSTable) {
 	var block_size uint
-	fmt.Print("Unesite velicinu index bloka: ")
-	fmt.Scan(&block_size)
+	// fmt.Print("Unesite velicinu index bloka: ")
+	// fmt.Scan(&block_size)
+	block_size = 2
 	for i, key := range sstable.blockLeaders {
 		if i%int(block_size) == 0 {
 			sstable.indexLeaders = append(sstable.indexLeaders, key)
 			sstable.IndexIndexes = append(sstable.IndexIndexes, sstable.dataSize+HEADER_SIZE+sstable.indexSize)
 		}
-		recordByte := make([]byte, len([]byte(key))+VALUE_SIZE_LEN)
+		recordByte := make([]byte, K_SIZE+len([]byte(key))+VALUE_SIZE_LEN)
 		sstable.indexSize += uint64(len(recordByte))
-		copy(recordByte[0:len([]byte(key))], []byte(key))
-		binary.LittleEndian.PutUint64(recordByte[len([]byte(key)):], sstable.blockIndexes[i])
+		binary.LittleEndian.PutUint64(recordByte[0:K_SIZE], uint64(len([]byte(key))))
+		copy(recordByte[K_SIZE:K_SIZE+len([]byte(key))], []byte(key))
+		binary.LittleEndian.PutUint64(recordByte[K_SIZE+len([]byte(key)):], sstable.blockIndexes[i])
 
 		writeBlock(&recordByte, sstable.path)
 	}
@@ -155,10 +157,11 @@ func writeIndex(sstable *SSTable) {
 // upis summary zone
 func writeSummary(sstable *SSTable) {
 	for i, key := range sstable.indexLeaders {
-		recordByte := make([]byte, len([]byte(key))+VALUE_SIZE_LEN)
+		recordByte := make([]byte, K_SIZE+len([]byte(key))+VALUE_SIZE_LEN)
 		sstable.summarySize += uint64(len(recordByte))
-		copy(recordByte[0:len([]byte(key))], []byte(key))
-		binary.LittleEndian.PutUint64(recordByte[len([]byte(key)):], sstable.IndexIndexes[i])
+		binary.LittleEndian.PutUint64(recordByte[0:K_SIZE], uint64(len([]byte(key))))
+		copy(recordByte[K_SIZE:K_SIZE+len([]byte(key))], []byte(key))
+		binary.LittleEndian.PutUint64(recordByte[K_SIZE+len([]byte(key)):], sstable.IndexIndexes[i])
 
 		writeBlock(&recordByte, sstable.path)
 	}
@@ -184,7 +187,7 @@ func writeBloomFilter(sstable *SSTable) {
 // poziv za kreiranje SSTable-a
 func NewSSTable(allRecords *[]record.Record) {
 	var sstable SSTable
-	sstable.path = "resources\\file.db"  // dodati random naziva na ime
+	sstable.path = "file.db"             // dodati random naziva na ime
 	file, err := os.Create(sstable.path) // nekom metodom davati imena, npr u ms vreme ili tako nes
 	if err != nil {
 		panic(err)
