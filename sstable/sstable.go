@@ -38,6 +38,7 @@ type SSTable struct {
 	bFDataSize   uint64                  // velicina data zone u BF, isto zarad header-a
 	merkleData   [][]byte
 	path         string
+	unixTime     int64 // Vreme kad je formirana ss tabela u nanosekundama od 1970. godine
 }
 
 // upis odredjene kolicine podataka u fajl
@@ -93,7 +94,7 @@ func writeSSTable(allRecords *[]record.Record, sstable *SSTable) {
 	writeHeader(sstable)      // upisi header
 	writeSummary(sstable)     // upis summary-a
 	writeBloomFilter(sstable) // kreiranje BF za potrebe memorisanja a zarad kasnijeg pretrazivanja
-	merkle.BuildMerkleTree(sstable.merkleData)
+	merkle.BuildMerkleTree(sstable.merkleData, sstable.unixTime)
 }
 
 // upisuje zaglavlje fajla sa neophodnim podacima
@@ -185,8 +186,9 @@ func writeBloomFilter(sstable *SSTable) {
 // poziv za kreiranje SSTable-a
 func NewSSTable(allRecords *[]record.Record) {
 	var sstable SSTable
-	sstable.path = "resources\\file" + fmt.Sprint(time.Now().UnixNano()) + ".db" // dodati random naziva na ime
-	file, err := os.Create(sstable.path)                                         // nekom metodom davati imena, npr u ms vreme ili tako nes
+	sstable.unixTime = time.Now().UnixNano()
+	sstable.path = "resources\\file_" + fmt.Sprint(sstable.unixTime) + ".db" // dodati random naziva na ime
+	file, err := os.Create(sstable.path)                                     // nekom metodom davati imena, npr u ms vreme ili tako nes
 	if err != nil {
 		panic(err)
 	}

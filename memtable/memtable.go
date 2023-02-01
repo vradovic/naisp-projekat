@@ -54,7 +54,6 @@ func (m *Memtable) Flush() {
 	// 	fmt.Println(record.Key)
 	// }
 
-	// TODO: Potrebno flushovati u data fajl
 	sstable.NewSSTable(&records)
 	fmt.Println("Memtable flushed!")
 }
