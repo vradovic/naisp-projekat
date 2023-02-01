@@ -3,6 +3,8 @@ package memtable
 import (
 	"fmt"
 	"math/rand"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/vradovic/naisp-projekat/record"
@@ -125,6 +127,48 @@ func (s *SkipList) Delete(r record.Record) bool {
 	}
 
 	//return false
+}
+
+func (s *SkipList) List(prefix string) []record.Record {
+	items := []record.Record{}
+	items = s.GetItems()
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Key < items[j].Key
+	})
+	list := []record.Record{}
+	breaker := false
+	for _, v := range items {
+		if strings.HasPrefix(v.Key, prefix) {
+			if !v.Tombstone {
+				list = append(list, v)
+				breaker = true
+			}
+		} else if breaker {
+			break
+		}
+	}
+	return list
+}
+
+func (s *SkipList) RangeScan(start string, finish string) []record.Record {
+	items := []record.Record{}
+	items = s.GetItems()
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Key < items[j].Key
+	})
+	list := []record.Record{}
+	for _, v := range items {
+		if v.Key <= finish {
+			if v.Key >= start {
+				if !v.Tombstone {
+					list = append(list, v)
+				}
+			}
+		} else {
+			break
+		}
+	}
+	return list
 }
 
 func (s SkipList) DisplayList() {
