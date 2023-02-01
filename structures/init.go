@@ -16,6 +16,14 @@ var Memtable *memtable.Memtable
 var Cache *cache.Cache
 
 func Init() {
+	// Pravljenje resources foldera ukoliko ne postoji
+	if _, err := os.Stat("resources"); os.IsNotExist(err) {
+		err := os.Mkdir("resources", 0700)
+		if err != nil {
+			panic("resources error")
+		}
+	}
+
 	// Pravljenje wal fajla ukoliko ne postoji
 	if _, err := os.Stat(config.GlobalConfig.WalPath); errors.Is(err, os.ErrNotExist) {
 		f, err := os.Create(config.GlobalConfig.WalPath)
