@@ -29,6 +29,12 @@ const (
 	KEY_SIZE_SIZE       = 8
 	VALUE_SIZE_SIZE     = 8
 	CRC_START           = 0
+
+	// LSM TREE
+	MAX_BYTES            = 5000
+	MAX_TABLES           = 2
+	SCALING_FACTOR       = 2
+	COMPACTION_ALGORITHM = "sizeTiered"
 )
 
 type Config struct {
@@ -56,6 +62,12 @@ type Config struct {
 	ValueSizeStart         int
 	KeyStart               int
 	BTreeOrder             int `yaml:"bTreeOrder"`
+
+	// LSM TREE
+	MaxBytes            int    `yaml:"maxBytes"`
+	MaxTables           int    `yaml:"maxTables"`
+	ScalingFactor       int    `yaml:"scalingFactor"`
+	CompactionAlgorithm string `yaml:"compactionAlgorithm"`
 }
 
 func NewConfig(filename string) *Config {
@@ -81,6 +93,12 @@ func NewConfig(filename string) *Config {
 		config.ValueSizeSize = VALUE_SIZE_SIZE
 		config.CrcStart = CRC_START
 		config.BTreeOrder = B_TREE_ORDER
+
+		// LSM TREE
+		config.MaxBytes = MAX_BYTES
+		config.MaxTables = MAX_TABLES
+		config.ScalingFactor = SCALING_FACTOR
+		config.CompactionAlgorithm = COMPACTION_ALGORITHM
 	}
 
 	err = yaml.Unmarshal(yamlFile, &config)
