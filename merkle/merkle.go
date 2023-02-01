@@ -1,4 +1,4 @@
-package main
+package merkle
 
 import (
 	"crypto/sha1"
@@ -30,9 +30,19 @@ func Hash(data []byte) []byte {
 	return h[:]
 }
 
-func BuildMerkleTree(data [][]byte) *MerkleRoot {
+func SerializeMerkleTree(root *Node, file *os.File) {
+	if root == nil {
+		return
+	}
+
+	fmt.Fprintln(file, root.String())
+	SerializeMerkleTree(root.left, file)
+	SerializeMerkleTree(root.right, file)
+}
+
+func BuildMerkleTree(data [][]byte, unixTime int64) {
 	if len(data) == 0 {
-		return nil
+		return
 	}
 
 	var nodes []*Node
@@ -58,26 +68,22 @@ func BuildMerkleTree(data [][]byte) *MerkleRoot {
 		nodes = newNodes
 	}
 
-	return &MerkleRoot{root: nodes[0]}
-}
-
-func SerializeMerkleTree(root *Node, file *os.File) {
-	if root == nil {
-		return
-	}
-
-	fmt.Fprintln(file, root.String())
-	SerializeMerkleTree(root.left, file)
-	SerializeMerkleTree(root.right, file)
-}
-
-func main() {
-	data := [][]byte{[]byte("data1"), []byte("data2"), []byte("data3")}
-	merkleRoot := BuildMerkleTree(data)
-
-	file, _ := os.Create("merkle_tree.txt")
+	file, _ := os.Create("resources\\MetaData_" + fmt.Sprint(unixTime) + ".txt") // dorada naziva da se poklapa sa sstable fajlom
 	defer file.Close()
-
-	SerializeMerkleTree(merkleRoot.root, file)
+	root := &MerkleRoot{root: nodes[0]}
+	SerializeMerkleTree(root.root, file)
 	fmt.Println("Merkle tree serialized to file")
+
+	// return &MerkleRoot{root: nodes[0]}
 }
+
+// func main() {
+// 	data := [][]byte{[]byte("data1"), []byte("data2"), []byte("data3")}
+// 	merkleRoot := BuildMerkleTree(data)
+
+// 	file, _ := os.Create("merkle_tree.txt")
+// 	defer file.Close()
+
+// 	SerializeMerkleTree(merkleRoot.root, file)
+// 	fmt.Println("Merkle tree serialized to file")
+// }

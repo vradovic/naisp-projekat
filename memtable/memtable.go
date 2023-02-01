@@ -8,6 +8,7 @@ import (
 
 	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/record"
+	"github.com/vradovic/naisp-projekat/sstable"
 )
 
 type Memtable struct {
@@ -49,11 +50,11 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 // FLush na disk
 func (m *Memtable) Flush() {
 	records := m.structure.GetItems() // Uzmi sve elemente iz strukture
-	for _, record := range records {
-		fmt.Println(record.Key)
-	}
+	// for _, record := range records {
+	// 	fmt.Println(record.Key)
+	// }
 
-	// TODO: Potrebno flushovati u data fajl
+	sstable.NewSSTable(&records)
 	fmt.Println("Memtable flushed!")
 }
 
