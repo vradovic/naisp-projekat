@@ -28,3 +28,9 @@ tombstoneSize : 1
 keySizeSize : 8
 valueSizeSize : 8
 crcStart : 0
+
+# LSM TREE
+maxBytes : 5000 # Maksimalan broj bajtova na prvom nivou (broj se skalira za svaki nivo)
+maxTables : 2 # Maksimalan broj ss tabela na prvom nivou (broj se skalira za svaki nivo)
+scalingFactor : 2 # Broj koji mnozi maxTables i maxBytes po nivoima
+compactionAlgorithm : "sizeTiered" # sizeTiered ili leveled
