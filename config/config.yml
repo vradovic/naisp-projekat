@@ -13,6 +13,7 @@ cmsDelta : 0.001
 memtableSize : 5
 structureType : "skiplist"
 skipListHeight : 5
+bTreeOrder : 3
 
 # TOKEN BUCKET
 tokenNumber : 6

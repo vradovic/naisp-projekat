@@ -8,6 +8,7 @@ import (
 
 	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/record"
+	"github.com/vradovic/naisp-projekat/sstable"
 )
 
 type Memtable struct {
@@ -21,6 +22,8 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 	switch structureName {
 	case "skiplist":
 		structure = NewSkipList(config.GlobalConfig.SkipListHeight)
+	case "btree":
+		structure = NewBTree(config.GlobalConfig.BTreeOrder)
 	default:
 		structure = NewSkipList(config.GlobalConfig.SkipListHeight)
 	}
@@ -47,11 +50,11 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 // FLush na disk
 func (m *Memtable) Flush() {
 	records := m.structure.GetItems() // Uzmi sve elemente iz strukture
-	for _, record := range records {
-		fmt.Println(record.Key)
-	}
+	// for _, record := range records {
+	// 	fmt.Println(record.Key)
+	// }
 
-	// TODO: Potrebno flushovati u data fajl
+	sstable.NewSSTable(&records)
 	fmt.Println("Memtable flushed!")
 }
 
@@ -61,8 +64,14 @@ func (m *Memtable) Write(r record.Record) bool {
 	if m.structure.GetSize() >= m.maxSize {
 		m.Flush()
 
-		m.structure = NewSkipList(config.GlobalConfig.SkipListHeight) // Nova struktura
-		err := os.Truncate(config.GlobalConfig.WalPath, 0)            // Resetovanje loga
+		switch config.GlobalConfig.StructureType { // Nova struktura
+		case "skiplist":
+			m.structure = NewSkipList(config.GlobalConfig.SkipListHeight)
+		case "btree":
+			m.structure = NewBTree(config.GlobalConfig.BTreeOrder)
+		}
+
+		err := os.Truncate(config.GlobalConfig.WalPath, 0) // Resetovanje loga
 		if err != nil {
 			return false
 		}
@@ -81,7 +90,12 @@ func (m *Memtable) Delete(r record.Record) bool {
 	if m.structure.GetSize() >= m.maxSize {
 		m.Flush()
 
-		m.structure = NewSkipList(config.GlobalConfig.SkipListHeight)
+		switch config.GlobalConfig.StructureType { // Nova struktura
+		case "skiplist":
+			m.structure = NewSkipList(config.GlobalConfig.SkipListHeight)
+		case "btree":
+			m.structure = NewBTree(config.GlobalConfig.BTreeOrder)
+		}
 	}
 
 	return success

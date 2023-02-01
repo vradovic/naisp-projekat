@@ -40,7 +40,7 @@ func SerializeMerkleTree(root *Node, file *os.File) {
 	SerializeMerkleTree(root.right, file)
 }
 
-func BuildMerkleTree(data [][]byte) {
+func BuildMerkleTree(data [][]byte, unixTime int64) {
 	if len(data) == 0 {
 		return
 	}
@@ -68,7 +68,7 @@ func BuildMerkleTree(data [][]byte) {
 		nodes = newNodes
 	}
 
-	file, _ := os.Create("resources\\MetaData.txt") // dorada naziva da se poklapa sa sstable fajlom
+	file, _ := os.Create("resources\\MetaData_" + fmt.Sprint(unixTime) + ".txt") // dorada naziva da se poklapa sa sstable fajlom
 	defer file.Close()
 	root := &MerkleRoot{root: nodes[0]}
 	SerializeMerkleTree(root.root, file)
