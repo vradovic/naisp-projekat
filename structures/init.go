@@ -8,12 +8,14 @@ import (
 
 	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/memtable"
+	"github.com/vradovic/naisp-projekat/tokenBucket"
 )
 
 // STRUKTURE U MEMORIJI
 
 var Memtable *memtable.Memtable
 var Cache *cache.Cache
+var TokenBucket *tokenBucket.TokenBucket
 
 func Init() {
 	// Pravljenje resources foldera ukoliko ne postoji
@@ -35,5 +37,6 @@ func Init() {
 
 	Memtable = memtable.NewMemtable(config.GlobalConfig.MemtableSize, config.GlobalConfig.StructureType)
 	Cache = cache.NewCache(config.GlobalConfig.CacheCapacity)
+	TokenBucket = tokenBucket.NewTokenBucket(config.GlobalConfig.TokenNumber, config.GlobalConfig.TokenRefreshTime)
 
 }
