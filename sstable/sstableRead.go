@@ -10,7 +10,7 @@ import (
 	"github.com/vradovic/naisp-projekat/record"
 )
 
-func findByKey(keys []string, path string, full bool) []record.Record {
+func FindByKey(keys []string, path string, full bool) []record.Record {
 	f, err := os.OpenFile(path, os.O_RDONLY, 0600) // unece se jos jedan parametar strukture SSTable za ime fajla
 	if err != nil {
 		panic(err)
