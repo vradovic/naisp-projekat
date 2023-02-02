@@ -6,5 +6,5 @@ import (
 )
 
 func TestRead(t *testing.T) {
-	fmt.Println(findByKey([]string{"a11", "f561"}, "file.db", true))
+	fmt.Println(findByKey([]string{"a", "f"}, "file.db", true))
 }
