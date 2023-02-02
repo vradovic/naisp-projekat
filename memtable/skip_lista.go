@@ -193,7 +193,7 @@ func (s *SkipList) GetItems() []record.Record {
 	head := s.header
 	lvl := 0
 	node := head.forward[lvl]
-	records := make([]record.Record, 1)
+	records := make([]record.Record, 0)
 
 	for node != nil {
 		records = append(records, node.record)
