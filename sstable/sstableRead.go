@@ -167,8 +167,8 @@ func checkSummary(file *os.File, key string, full bool, keySec string) []record.
 	binary.Read(bytes.NewReader(otherLenB[keyLen:]), binary.LittleEndian, &index1)
 	sumPos += K_SIZE + keyLen + VALUE_SIZE_LEN
 
-	var key2 string
-	var index2 int64
+	key2 := key1
+	index2 := index1
 	for sumPos < bf { // vrtimo se po summary dok ne nadjemo opseg u kom nastavljamo trazenje
 		var keyLen int64
 		keyLenB := make([]byte, K_SIZE)
@@ -202,7 +202,7 @@ func checkSummary(file *os.File, key string, full bool, keySec string) []record.
 		index1 = index2
 	}
 	if full {
-		if key >= key2 {
+		if key >= key2[:len(key)] {
 			return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
 		}
 	} else {
