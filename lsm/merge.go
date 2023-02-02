@@ -2,6 +2,7 @@ package lsm
 
 import (
 	"encoding/binary"
+	"fmt"
 	"github.com/vradovic/naisp-projekat/record"
 	"os"
 )
@@ -16,13 +17,11 @@ func MergeTables(first, second string) error {
 	if err != nil {
 		return err
 	}
-	defer firstFile.Close()
 
 	secondFile, err := os.Open(first)
 	if err != nil {
 		return err
 	}
-	defer secondFile.Close()
 
 	// Dobavljanje duzine data segmenta
 	firstLength, err := getDataSegmentLength(firstFile)
@@ -47,6 +46,16 @@ func MergeTables(first, second string) error {
 	}
 
 	// Redosledna obrada
+	records, err := sequentialUpdate(firstFile, secondFile, firstLength, secondLength)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(records)
+
+	firstFile.Close()
+	secondFile.Close()
+	return nil
 }
 
 func getDataSegmentLength(f *os.File) (int64, error) {
@@ -62,11 +71,83 @@ func getDataSegmentLength(f *os.File) (int64, error) {
 	return length, nil
 }
 
-func sequentialUpdate(first, second *os.File) (record.Record, error) {
+func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) ([]record.Record, error) {
+	var firstReadBytes, secondReadBytes int64 = 0, 0
+	var firstRecord, secondRecord record.Record
+	records := make([]record.Record, 0)
 
+	var bytes int64
+	var err error
+	firstRecord, bytes, err = bytesToRecord(first)
+	secondRecord, bytes, err = bytesToRecord(second)
+
+	if err != nil {
+		return []record.Record{}, err
+	}
+	secondReadBytes += bytes
+	if err != nil {
+		return []record.Record{}, err
+	}
+	firstReadBytes += bytes
+
+	for firstReadBytes < firstLength && secondReadBytes < secondLength {
+
+		// Poredjenje
+		if firstRecord.Key == secondRecord.Key {
+			if firstRecord.Timestamp > secondRecord.Timestamp && !firstRecord.Tombstone {
+				records = append(records, firstRecord)
+			} else if firstRecord.Timestamp <= secondRecord.Timestamp && !secondRecord.Tombstone {
+				records = append(records, secondRecord)
+			}
+
+			if firstReadBytes < firstLength {
+				firstRecord, bytes, err = bytesToRecord(first)
+				if err != nil {
+					return []record.Record{}, err
+				}
+				firstReadBytes += bytes
+			}
+
+			if secondReadBytes < secondLength {
+				secondRecord, bytes, err = bytesToRecord(second)
+				if err != nil {
+					return []record.Record{}, err
+				}
+				secondReadBytes += bytes
+			}
+
+		} else if firstRecord.Key > secondRecord.Key {
+			if !secondRecord.Tombstone {
+				records = append(records, secondRecord)
+			}
+
+			if secondReadBytes < secondLength {
+				secondRecord, bytes, err = bytesToRecord(second)
+				if err != nil {
+					return []record.Record{}, err
+				}
+				secondReadBytes += bytes
+			}
+
+		} else if firstRecord.Key < secondRecord.Key {
+			if !firstRecord.Tombstone {
+				records = append(records, firstRecord)
+			}
+
+			if firstReadBytes < firstLength {
+				firstRecord, bytes, err = bytesToRecord(first)
+				if err != nil {
+					return []record.Record{}, err
+				}
+				firstReadBytes += bytes
+			}
+		}
+	}
+
+	return records, nil
 }
 
-func bytesToRecord(f *os.File) (record.Record, error) {
+func bytesToRecord(f *os.File) (record.Record, int64, error) {
 	// Struktura: KS(8), VS(8), TIME(8), TB(1), K(...), V(...)
 	buffer := make([]byte, 8)
 	tombstoneBuffer := make([]byte, 1)
@@ -74,50 +155,51 @@ func bytesToRecord(f *os.File) (record.Record, error) {
 	// Key size
 	_, err := f.Read(buffer)
 	if err != nil {
-		return record.Record{}, err
+		return record.Record{}, 0, err
 	}
 	keySize := binary.LittleEndian.Uint64(buffer)
 
 	// Value size
 	_, err = f.Read(buffer)
 	if err != nil {
-		return record.Record{}, err
+		return record.Record{}, 0, err
 	}
 	valueSize := binary.LittleEndian.Uint64(buffer)
 
 	// Timestamp
 	_, err = f.Read(buffer)
 	if err != nil {
-		return record.Record{}, err
+		return record.Record{}, 0, err
 	}
 	timestamp := binary.LittleEndian.Uint64(buffer)
 
 	// Tombstone
 	_, err = f.Read(tombstoneBuffer)
 	if err != nil {
-		return record.Record{}, err
+		return record.Record{}, 0, err
 	}
-	tombstoneByte := binary.LittleEndian.Uint64(buffer)
-	tombstone := tombstoneByte != 0
+	tombstone := tombstoneBuffer[0] != 0
 
 	// Key
 	keyBuffer := make([]byte, keySize)
 	_, err = f.Read(keyBuffer)
 	if err != nil {
-		return record.Record{}, err
+		return record.Record{}, 0, err
 	}
-	key := string(binary.LittleEndian.Uint64(keyBuffer))
+	key := string(keyBuffer)
 
 	// Value
 	value := make([]byte, valueSize)
 	_, err = f.Read(value)
 	if err != nil {
-		return record.Record{}, err
+		return record.Record{}, 0, err
 	}
+
+	readBytes := 25 + len(key) + len(value)
 
 	return record.Record{
 		Key:       key,
 		Value:     value,
 		Timestamp: int64(timestamp),
-		Tombstone: tombstone}, nil
+		Tombstone: tombstone}, int64(readBytes), nil
 }
