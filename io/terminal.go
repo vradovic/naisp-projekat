@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/vradovic/naisp-projekat/structures"
 )
 
 func GetInput(isNewWrite bool) (string, []byte) {
@@ -41,33 +43,48 @@ func Menu() error {
 
 		switch scanner.Text() {
 		case "1": // PUT
-			key, value := GetInput(true)
-			timestamp := time.Now().UnixNano()
-
-			success := Put(key, value, timestamp)
-			if success {
-				fmt.Println("Write saved.")
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println("Nemate pravo na vise zahteva. Molimo sacekajte.")
 			} else {
-				fmt.Println("Write failed.")
+				key, value := GetInput(true)
+				timestamp := time.Now().UnixNano()
+
+				success := Put(key, value, timestamp)
+				if success {
+					fmt.Println("Write saved.")
+				} else {
+					fmt.Println("Write failed.")
+				}
 			}
+
 		case "2": // READ
-			key, _ := GetInput(false)
-			value := Get(key)
-			if value == nil {
-				fmt.Println("Record not found")
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println("Nemate pravo na vise zahteva. Molimo sacekajte.")
 			} else {
-				fmt.Printf("Record found: %s %s", key, string(value))
+				key, _ := GetInput(false)
+				value := Get(key)
+				if value == nil {
+					fmt.Println("Record not found")
+				} else {
+					fmt.Printf("Record found: %s %s", key, string(value))
+				}
 			}
-		case "3": // DELETE
-			key, _ := GetInput(false)
-			timestamp := time.Now().UnixNano()
 
-			success := Delete(key, timestamp)
-			if success {
-				fmt.Println("Delete saved.")
+		case "3": // DELETE
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println("Nemate pravo na vise zahteva. Molimo sacekajte.")
 			} else {
-				fmt.Println("Delete failed.")
+				key, _ := GetInput(false)
+				timestamp := time.Now().UnixNano()
+
+				success := Delete(key, timestamp)
+				if success {
+					fmt.Println("Delete saved.")
+				} else {
+					fmt.Println("Delete failed.")
+				}
 			}
+
 		case "x": // EXIT
 			return nil
 		default:

@@ -2,6 +2,8 @@ package memtable
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/vradovic/naisp-projekat/record"
 )
@@ -118,6 +120,48 @@ func (b *BTree) splitChild(x *BTreeNode, i int) {
 		z.child = y.child[t : 2*t]
 		y.child = y.child[0:t]
 	}
+}
+
+func (b *BTree) List(prefix string) []record.Record {
+	items := []record.Record{}
+	items = b.GetItems()
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Key < items[j].Key
+	})
+	list := []record.Record{}
+	breaker := false
+	for _, v := range items {
+		if strings.HasPrefix(v.Key, prefix) {
+			if !v.Tombstone {
+				list = append(list, v)
+				breaker = true
+			}
+		} else if breaker {
+			break
+		}
+	}
+	return list
+}
+
+func (b *BTree) RangeScan(start string, finish string) []record.Record {
+	items := []record.Record{}
+	items = b.GetItems()
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Key < items[j].Key
+	})
+	list := []record.Record{}
+	for _, v := range items {
+		if v.Key <= finish {
+			if v.Key >= start {
+				if !v.Tombstone {
+					list = append(list, v)
+				}
+			}
+		} else {
+			break
+		}
+	}
+	return list
 }
 
 func (b *BTree) printBTree(x *BTreeNode, l int) {

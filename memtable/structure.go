@@ -9,4 +9,6 @@ type Structure interface {
 	Read(key string) []byte
 	Delete(r record.Record) bool
 	GetItems() []record.Record
+	List(prefix string) []record.Record
+	RangeScan(start string, finish string) []record.Record
 }
