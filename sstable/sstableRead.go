@@ -193,8 +193,14 @@ func checkSummary(file *os.File, key string, full bool, keySec string) []record.
 				if key <= key1[:len(key)] && keySec != "" {
 					return checkIndexZone(key, index1, index2, file, ds, is, full, keySec) // nasli opseg pa idemo u index zonu
 				}
+				if key >= key1[:len(key)] && keySec != "" && key < key2 {
+					return checkIndexZone(key, index1, index2, file, ds, is, full, keySec) // nasli opseg pa idemo u index zonu
+				}
 			} else {
 				if key <= key1 && keySec != "" {
+					return checkIndexZone(key, index1, index2, file, ds, is, full, keySec) // nasli opseg pa idemo u index zonu
+				}
+				if key >= key1 && keySec != "" && key < key2 {
 					return checkIndexZone(key, index1, index2, file, ds, is, full, keySec) // nasli opseg pa idemo u index zonu
 				}
 			}
@@ -288,8 +294,14 @@ func checkIndexZone(key string, iPos int64, maxPos int64, file *os.File, ds int6
 				if key <= key1[:len(key)] && keySec != "" {
 					return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli opseg pa idemo u index zonu
 				}
+				if key >= key1[:len(key)] && keySec != "" && key < key2 {
+					return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli opseg pa idemo u index zonu
+				}
 			} else {
 				if key <= key1 && keySec != "" {
+					return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli opseg pa idemo u index zonu
+				}
+				if key >= key1 && keySec != "" && key < key2 {
 					return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli opseg pa idemo u index zonu
 				}
 			}
