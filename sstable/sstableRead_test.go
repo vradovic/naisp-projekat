@@ -21,6 +21,6 @@ var readTests = []readTest{
 func TestRead(t *testing.T) {
 	PATH := "resources\\file_1675455770199457600.db"
 	for _, test := range readTests {
-		fmt.Println(findByKey(test.keys, PATH, test.full))
+		fmt.Println(FindByKey(test.keys, PATH, test.full))
 	}
 }

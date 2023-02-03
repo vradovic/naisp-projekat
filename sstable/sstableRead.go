@@ -11,7 +11,7 @@ import (
 )
 
 // f-ja prima kljuc putanju do fajla i vrednost da li se trazi prefix
-func findByKey(keys []string, path string, full bool) []record.Record {
+func FindByKey(keys []string, path string, full bool) []record.Record {
 	f, err := os.OpenFile(path, os.O_RDONLY, 0600)
 	if err != nil {
 		panic(err)

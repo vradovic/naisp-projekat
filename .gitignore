@@ -2,3 +2,4 @@ resources/
 .vscode
 .idea
 config/config.yml
+__debug_bin
