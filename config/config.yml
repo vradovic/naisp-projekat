@@ -10,7 +10,7 @@ cmsEpsilon : 0.001
 cmsDelta : 0.001
 
 # MEMTABLE
-memtableSize : 2
+memtableSize : 5
 structureType : "btree"
 skipListHeight : 5
 bTreeOrder : 3

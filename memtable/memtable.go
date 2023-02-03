@@ -54,7 +54,7 @@ func (m *Memtable) Flush() {
 	// 	fmt.Println(record.Key)
 	// }
 
-	sstable.NewSSTable(&records, 0)
+	sstable.NewSSTable(&records, 1)
 	fmt.Println("Memtable flushed!")
 }
 

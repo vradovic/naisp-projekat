@@ -4,11 +4,13 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/vradovic/naisp-projekat/record"
+	"github.com/vradovic/naisp-projekat/sstable"
+	"math"
 	"os"
 )
 
 // Spajanje dve ss tabele u jednu novu, first i second su putanje do tabela
-func MergeTables(first, second string) error {
+func MergeTables(first, second string, level int) error {
 	// ucitaj fajlove
 	// redom idi kroz fajlove i izvrsavaj merge
 	// napisi novu tabelu
@@ -18,7 +20,7 @@ func MergeTables(first, second string) error {
 		return err
 	}
 
-	secondFile, err := os.Open(first)
+	secondFile, err := os.Open(second)
 	if err != nil {
 		return err
 	}
@@ -51,10 +53,12 @@ func MergeTables(first, second string) error {
 		return err
 	}
 
-	fmt.Println(records)
-
 	firstFile.Close()
 	secondFile.Close()
+
+	fmt.Println(records)
+	sstable.NewSSTable(&records, level)
+
 	return nil
 }
 
@@ -90,7 +94,7 @@ func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) (
 	}
 	firstReadBytes += bytes
 
-	for firstReadBytes < firstLength && secondReadBytes < secondLength {
+	for (firstReadBytes < firstLength || secondReadBytes < secondLength) && !(firstRecord.Key == "~" && secondRecord.Key == "~") {
 
 		// Poredjenje
 		if firstRecord.Key == secondRecord.Key {
@@ -100,20 +104,24 @@ func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) (
 				records = append(records, secondRecord)
 			}
 
-			if firstReadBytes < firstLength {
+			if firstReadBytes < firstLength && math.Abs(float64(firstReadBytes-firstLength)) > 25 {
 				firstRecord, bytes, err = bytesToRecord(first)
 				if err != nil {
 					return []record.Record{}, err
 				}
 				firstReadBytes += bytes
+			} else {
+				firstRecord.Key = "~"
 			}
 
-			if secondReadBytes < secondLength {
+			if secondReadBytes < secondLength && math.Abs(float64(secondReadBytes-secondLength)) > 25 {
 				secondRecord, bytes, err = bytesToRecord(second)
 				if err != nil {
 					return []record.Record{}, err
 				}
 				secondReadBytes += bytes
+			} else {
+				secondRecord.Key = "~"
 			}
 
 		} else if firstRecord.Key > secondRecord.Key {
@@ -121,12 +129,14 @@ func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) (
 				records = append(records, secondRecord)
 			}
 
-			if secondReadBytes < secondLength {
+			if secondReadBytes < secondLength && math.Abs(float64(secondReadBytes-secondLength)) > 25 {
 				secondRecord, bytes, err = bytesToRecord(second)
 				if err != nil {
 					return []record.Record{}, err
 				}
 				secondReadBytes += bytes
+			} else {
+				secondRecord.Key = "~"
 			}
 
 		} else if firstRecord.Key < secondRecord.Key {
@@ -134,12 +144,14 @@ func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) (
 				records = append(records, firstRecord)
 			}
 
-			if firstReadBytes < firstLength {
+			if firstReadBytes < firstLength && math.Abs(float64(firstReadBytes-firstLength)) > 25 {
 				firstRecord, bytes, err = bytesToRecord(first)
 				if err != nil {
 					return []record.Record{}, err
 				}
 				firstReadBytes += bytes
+			} else {
+				firstRecord.Key = "~"
 			}
 		}
 	}
@@ -195,7 +207,7 @@ func bytesToRecord(f *os.File) (record.Record, int64, error) {
 		return record.Record{}, 0, err
 	}
 
-	readBytes := 25 + len(key) + len(value)
+	readBytes := 25 + len(key) + len(value) // 25 je fiksna duzina prvih 4 polja
 
 	return record.Record{
 		Key:       key,
