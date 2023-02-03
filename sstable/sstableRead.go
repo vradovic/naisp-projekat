@@ -383,7 +383,7 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 	var valueLen int64
 	var newKey string
 	var timestamp int64
-	var tombstone uint64
+	var tombstone byte
 	var vrednosti []record.Record
 	bufferedReader := bufio.NewReader(file)
 	keyLenB := make([]byte, KEY_SIZE_LEN)
