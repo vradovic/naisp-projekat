@@ -507,6 +507,9 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 
 		} else {
 			if len(key) <= len(newKey) {
+				if key < newKey[:len(key)] {
+					return vrednosti
+				}
 				if key == newKey[:len(key)] {
 					vrednost := otherB[TIMESTAMP_LEN+TOMBSTONE_LEN+keyLen:]
 					binary.Read(bytes.NewReader(otherB[:TIMESTAMP_LEN]), binary.LittleEndian, &timestamp)
@@ -521,9 +524,8 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 				}
 			}
 		}
-		if keySec != "" {
-			maxPos += keyLen + valueLen + KEY_SIZE_LEN + VALUE_SIZE_LEN + TIMESTAMP_LEN + TOMBSTONE_LEN
-		}
+		maxPos += keyLen + valueLen + KEY_SIZE_LEN + VALUE_SIZE_LEN + TIMESTAMP_LEN + TOMBSTONE_LEN
+
 		iPos += keyLen + valueLen + KEY_SIZE_LEN + VALUE_SIZE_LEN + TIMESTAMP_LEN + TOMBSTONE_LEN
 		if iPos >= ds {
 			return vrednosti
