@@ -25,8 +25,7 @@ func ReadWalRecord(f *os.File) (record.Record, error) {
 	if err != nil {
 		return record.Record{}, err
 	}
-	tombstoneValue := binary.LittleEndian.Uint64(tombstoneBuff)
-	tombstone := tombstoneValue != 0
+	tombstone := tombstoneBuff[0] != 0
 
 	keySizeBuff := make([]byte, config.GlobalConfig.KeySizeSize)
 	_, err = f.Read(keySizeBuff)
