@@ -213,29 +213,30 @@ func checkSummary(file *os.File, key string, full bool, keySec string) []record.
 		key1 = key2
 		index1 = index2
 	}
-	if full {
-		if len(key) <= len(key2) {
-			if key >= key2[:len(key)] {
-				return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
-			}
-		} else {
-			if key >= key2 {
-				return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
-			}
-		}
-	} else {
-		if len(key) <= len(key2) {
-			if key >= key2[:len(key)] {
-				return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
-			}
-		} else {
-			if key >= key2 {
-				return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
-			}
-		}
-	}
+	return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+	// if full {
+	// 	if len(key) <= len(key2) {
+	// 		if key >= key2[:len(key)] {
+	// 			return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+	// 		}
+	// 	} else {
+	// 		if key >= key2 {
+	// 			return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+	// 		}
+	// 	}
+	// } else {
+	// 	if len(key) <= len(key2) {
+	// 		if key >= key2[:len(key)] {
+	// 			return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+	// 		}
+	// 	} else {
+	// 		if key >= key2 {
+	// 			return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+	// 		}
+	// 	}
+	// }
 
-	return []record.Record{}
+	// return []record.Record{}
 }
 
 // listamo index zonu da bi nasli opseg i data zoni
@@ -293,8 +294,14 @@ func checkIndexZone(key string, iPos int64, maxPos int64, file *os.File, ds int6
 				}
 			}
 		} else {
-			if key >= key1 && key2 > key {
-				return checkDataZone(key, index1, index2, file, ds, full, keySec)
+			if len(key) <= len(key1) {
+				if key >= key1[:len(key)] && key2 > key {
+					return checkDataZone(key, index1, index2, file, ds, full, keySec)
+				}
+			} else {
+				if key >= key1 && key2 > key {
+					return checkDataZone(key, index1, index2, file, ds, full, keySec)
+				}
 			}
 		}
 
