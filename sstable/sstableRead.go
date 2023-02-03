@@ -294,8 +294,14 @@ func checkIndexZone(key string, iPos int64, maxPos int64, file *os.File, ds int6
 				}
 			}
 		} else {
-			if key >= key1 && key2 > key {
-				return checkDataZone(key, index1, index2, file, ds, full, keySec)
+			if len(key) <= len(key1) {
+				if key >= key1[:len(key)] && key2 > key {
+					return checkDataZone(key, index1, index2, file, ds, full, keySec)
+				}
+			} else {
+				if key >= key1 && key2 > key {
+					return checkDataZone(key, index1, index2, file, ds, full, keySec)
+				}
 			}
 		}
 

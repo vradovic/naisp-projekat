@@ -6,5 +6,5 @@ import (
 )
 
 func TestRead(t *testing.T) {
-	fmt.Println(findByKey([]string{"d16"}, "file.db", true))
+	fmt.Println(findByKey([]string{"an"}, "file_1675435439519705200.db", false))
 }
