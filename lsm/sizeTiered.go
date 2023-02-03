@@ -1,1 +1,85 @@
 package lsm
+
+import (
+	"errors"
+	"github.com/vradovic/naisp-projekat/config"
+	"os"
+	"strconv"
+	"strings"
+)
+
+// Size-tiered kompakcija
+func SizeTiered() error {
+	maxLevels := config.GlobalConfig.MaxLevels
+	if maxLevels < 1 {
+		return errors.New("max lsm tree levels must be 1 or more")
+	}
+
+	maxTables := config.GlobalConfig.MaxTables
+	if maxTables < 1 {
+		return errors.New("max tables must be 1 or more")
+	}
+
+	maxBytes := config.GlobalConfig.MaxBytes
+	if maxBytes < 1024 {
+		return errors.New("max bytes must be 1024 or more")
+	}
+
+	for lvl := 1; lvl < maxLevels; lvl++ {
+		files, err := getLevelFiles(lvl)
+		if err != nil {
+			return err
+		}
+
+		switch config.GlobalConfig.Condition {
+		case "tables":
+			if len(files) >= maxTables {
+				err := compact(files, lvl+1)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func getLevelFiles(level int) ([]string, error) {
+	var files []string
+
+	dir, err := os.Open("resources")
+	defer dir.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	fileInfo, err := dir.Readdir(-1)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range fileInfo {
+		if strings.Contains(file.Name(), "file") {
+			fileLevel := strings.Split(strings.TrimSuffix(file.Name(), ".db"), "_")[2]
+			if lvl, _ := strconv.Atoi(fileLevel); lvl == level {
+				files = append(files, file.Name())
+			}
+		}
+	}
+
+	return files, nil
+}
+
+func compact(files []string, level int) error {
+	for i := 1; i < len(files); i += 2 {
+		first := "resources\\" + files[i-1]
+		second := "resources\\" + files[i]
+		err := MergeTables(first, second, level)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

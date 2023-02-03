@@ -59,6 +59,16 @@ func MergeTables(first, second string, level int) error {
 	fmt.Println(records)
 	sstable.NewSSTable(&records, level)
 
+	err = os.Remove(first)
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(second)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
