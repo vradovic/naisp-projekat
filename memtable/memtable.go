@@ -49,32 +49,37 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 }
 
 // FLush na disk
-func (m *Memtable) Flush() {
+func (m *Memtable) Flush() error {
 	records := m.structure.GetItems() // Uzmi sve elemente iz strukture
 	// for _, record := range records {
 	// 	fmt.Println(record.Key)
 	// }
 
 	sstable.NewSSTable(&records)
+
+	err := os.Truncate(config.GlobalConfig.WalPath, 0) // Resetovanje loga
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("Memtable flushed!")
+	return nil
 }
 
 func (m *Memtable) Write(r record.Record) bool {
 	success := m.structure.Write(r)
 
 	if m.structure.GetSize() >= m.maxSize {
-		m.Flush()
+		err := m.Flush()
+		if err != nil {
+			return false
+		}
 
 		switch config.GlobalConfig.StructureType { // Nova struktura
 		case "skiplist":
 			m.structure = NewSkipList(config.GlobalConfig.SkipListHeight)
 		case "btree":
 			m.structure = NewBTree(config.GlobalConfig.BTreeOrder)
-		}
-
-		err := os.Truncate(config.GlobalConfig.WalPath, 0) // Resetovanje loga
-		if err != nil {
-			return false
 		}
 	}
 
@@ -89,7 +94,10 @@ func (m *Memtable) Delete(r record.Record) bool {
 	success := m.structure.Delete(r)
 
 	if m.structure.GetSize() >= m.maxSize {
-		m.Flush()
+		err := m.Flush()
+		if err != nil {
+			return false
+		}
 
 		switch config.GlobalConfig.StructureType { // Nova struktura
 		case "skiplist":
