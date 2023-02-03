@@ -85,6 +85,8 @@ func Menu() error {
 				}
 			}
 
+			// TODO: Implementirati list i range scan
+
 		case "x": // EXIT
 			return nil
 		default:
