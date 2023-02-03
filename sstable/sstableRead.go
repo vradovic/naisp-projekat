@@ -187,25 +187,25 @@ func checkSummary(file *os.File, key string, full bool, keySec string) []record.
 		// odvajamo slucaj kad se trazi ceo kljuc a ne samo njegov prefix
 		if full {
 			if key >= key1 && key2 > key && keySec == "" {
-				return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec) // nasli opseg pa idemo u index zonu
+				return checkIndexZone(key, index1, index2, file, ds, is, full, keySec) // nasli opseg pa idemo u index zonu
 			}
 			if len(key) <= len(key1) {
-				if key >= key1[:len(key)] && keySec != "" {
-					return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec) // nasli opseg pa idemo u index zonu
+				if key <= key1[:len(key)] && keySec != "" {
+					return checkIndexZone(key, index1, index2, file, ds, is, full, keySec) // nasli opseg pa idemo u index zonu
 				}
 			} else {
-				if key >= key1 && keySec != "" {
-					return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec) // nasli opseg pa idemo u index zonu
+				if key <= key1 && keySec != "" {
+					return checkIndexZone(key, index1, index2, file, ds, is, full, keySec) // nasli opseg pa idemo u index zonu
 				}
 			}
 		} else {
 			if len(key) <= len(key1) {
 				if key >= key1[:len(key)] && key2 > key {
-					return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec)
+					return checkIndexZone(key, index1, index2, file, ds, is, full, keySec)
 				}
 			} else {
 				if key >= key1 && key2 > key {
-					return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec)
+					return checkIndexZone(key, index1, index2, file, ds, is, full, keySec)
 				}
 			}
 		}
@@ -285,11 +285,11 @@ func checkIndexZone(key string, iPos int64, maxPos int64, file *os.File, ds int6
 				return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli smo opseg ulazimo u data zonu
 			}
 			if len(key) <= len(key1) {
-				if key >= key1[:len(key)] && keySec != "" {
+				if key <= key1[:len(key)] && keySec != "" {
 					return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli opseg pa idemo u index zonu
 				}
 			} else {
-				if key >= key1 && keySec != "" {
+				if key <= key1 && keySec != "" {
 					return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli opseg pa idemo u index zonu
 				}
 			}
@@ -327,7 +327,7 @@ func checkIndexZone(key string, iPos int64, maxPos int64, file *os.File, ds int6
 				if err != nil {
 					return []record.Record{}
 				}
-				key2 = string(otherLenB[0:keyLen])
+				// key2 = string(otherLenB[0:keyLen])
 				binary.Read(bytes.NewReader(otherLenB[keyLen:]), binary.LittleEndian, &index2)
 				return checkDataZone(key, index1, index2, file, ds, full, keySec)
 			}
@@ -347,7 +347,7 @@ func checkIndexZone(key string, iPos int64, maxPos int64, file *os.File, ds int6
 				if err != nil {
 					return []record.Record{}
 				}
-				key2 = string(otherLenB[0:keyLen])
+				// key2 = string(otherLenB[0:keyLen])
 				binary.Read(bytes.NewReader(otherLenB[keyLen:]), binary.LittleEndian, &index2)
 				return checkDataZone(key, index1, index2, file, ds, full, keySec)
 			}
@@ -369,7 +369,7 @@ func checkIndexZone(key string, iPos int64, maxPos int64, file *os.File, ds int6
 			if err != nil {
 				return []record.Record{}
 			}
-			key2 = string(otherLenB[0:keyLen])
+			// key2 = string(otherLenB[0:keyLen])
 			binary.Read(bytes.NewReader(otherLenB[keyLen:]), binary.LittleEndian, &index2)
 			return checkDataZone(key, index1, index2, file, ds, full, keySec)
 		}
@@ -416,7 +416,9 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 			} else {
 				tombstoneb = true
 			}
-			vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+			if !tombstoneb {
+				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+			}
 			return vrednosti
 		}
 		if keySec != "" && key <= newKey && key <= keySec {
@@ -429,7 +431,9 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 			} else {
 				tombstoneb = true
 			}
-			vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+			if !tombstoneb {
+				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+			}
 		}
 	} else {
 		if len(key) <= len(newKey) {
@@ -443,7 +447,9 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 				} else {
 					tombstoneb = true
 				}
-				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+				if !tombstoneb {
+					vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+				}
 			}
 		}
 	}
@@ -489,7 +495,9 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 				} else {
 					tombstoneb = true
 				}
-				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+				if !tombstoneb {
+					vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+				}
 				return vrednosti
 			}
 			if keySec != "" && key <= newKey && key <= keySec {
@@ -502,7 +510,9 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 				} else {
 					tombstoneb = true
 				}
-				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+				if !tombstoneb {
+					vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+				}
 			}
 
 		} else {
@@ -520,7 +530,9 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 					} else {
 						tombstoneb = false
 					}
-					vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+					if !tombstoneb {
+						vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+					}
 				}
 			}
 		}
