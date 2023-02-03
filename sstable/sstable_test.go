@@ -16,7 +16,7 @@ func TestWrite(t *testing.T) {
 	allRecords = append(allRecords, record.Record{Key: "franjo", Value: []byte{1, 1, 1, 1, 1, 1, 1, 1}, Timestamp: 35116516, Tombstone: false})
 	allRecords = append(allRecords, record.Record{Key: "goran", Value: []byte{5, 5, 5, 5, 5, 5, 5, 5}, Timestamp: 65468468, Tombstone: true})
 	allRecords = append(allRecords, record.Record{Key: "hamza", Value: []byte{1, 1, 1, 1, 1, 1, 1, 1}, Timestamp: 46581616, Tombstone: true})
-	allRecords = append(allRecords, record.Record{Key: "ivan", Value: []byte{5, 5, 5, 5, 5, 5, 5, 5}, Timestamp: 658684684, Tombstone: true})
+	allRecords = append(allRecords, record.Record{Key: "ivan", Value: []byte{5, 5, 5, 5, 5, 5, 5, 5}, Timestamp: 658684684, Tombstone: false})
 	allRecords = append(allRecords, record.Record{Key: "ivana", Value: []byte{1, 1, 1, 1, 1, 1, 1, 1}, Timestamp: 566464, Tombstone: false})
 	allRecords = append(allRecords, record.Record{Key: "jovan", Value: []byte{5, 5, 5, 5, 5, 5, 5, 5}, Timestamp: 35461, Tombstone: false})
 	allRecords = append(allRecords, record.Record{Key: "zoki", Value: []byte{1, 1, 1, 1, 1, 1, 1, 1}, Timestamp: 65161, Tombstone: true})
