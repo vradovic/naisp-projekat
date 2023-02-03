@@ -3,6 +3,7 @@ package memtable
 import (
 	"errors"
 	"fmt"
+	"github.com/vradovic/naisp-projekat/wal"
 	"io"
 	"os"
 
@@ -103,26 +104,24 @@ func (m *Memtable) Delete(r record.Record) bool {
 
 func (m *Memtable) recover() error {
 	walFile, err := os.Open(config.GlobalConfig.WalPath)
+	defer walFile.Close()
 	if err != nil {
 		return err
 	}
-	defer walFile.Close()
 
 	for {
-		b := make([]byte, config.GlobalConfig.MaxEntrySize)
-		_, e := walFile.Read(b)
-		if e == io.EOF {
+		rec, err := wal.ReadWalRecord(walFile)
+		if err == io.EOF {
 			break
-		} else if e != nil {
-			return e
+		} else if err != nil {
+			return err
 		}
 
-		record := record.BytesToRecord(b)
 		var success bool
-		if record.Tombstone {
-			success = m.structure.Delete(record)
+		if rec.Tombstone {
+			success = m.structure.Delete(rec)
 		} else {
-			success = m.structure.Write(record)
+			success = m.structure.Write(rec)
 		}
 
 		if !success {
