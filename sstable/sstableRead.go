@@ -189,12 +189,24 @@ func checkSummary(file *os.File, key string, full bool, keySec string) []record.
 			if key >= key1 && key2 > key && keySec == "" {
 				return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec) // nasli opseg pa idemo u index zonu
 			}
-			if key >= key1[:len(key)] && keySec != "" {
-				return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec) // nasli opseg pa idemo u index zonu
+			if len(key) <= len(key1) {
+				if key >= key1[:len(key)] && keySec != "" {
+					return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec) // nasli opseg pa idemo u index zonu
+				}
+			} else {
+				if key >= key1 && keySec != "" {
+					return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec) // nasli opseg pa idemo u index zonu
+				}
 			}
 		} else {
-			if key >= key1[:len(key)] && key2[:len(key)] > key {
-				return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec)
+			if len(key) <= len(key1) {
+				if key >= key1[:len(key)] && key2 > key {
+					return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec)
+				}
+			} else {
+				if key >= key1 && key2 > key {
+					return checkIndexZone(key, index1, index2, file, ds+HEADER_SIZE, is, full, keySec)
+				}
 			}
 		}
 		sumPos += K_SIZE + keyLen + VALUE_SIZE_LEN
@@ -202,12 +214,24 @@ func checkSummary(file *os.File, key string, full bool, keySec string) []record.
 		index1 = index2
 	}
 	if full {
-		if key >= key2[:len(key)] {
-			return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+		if len(key) <= len(key2) {
+			if key >= key2[:len(key)] {
+				return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+			}
+		} else {
+			if key >= key2 {
+				return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+			}
 		}
 	} else {
-		if key >= key2[:len(key)] {
-			return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+		if len(key) <= len(key2) {
+			if key >= key2[:len(key)] {
+				return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+			}
+		} else {
+			if key >= key2 {
+				return checkIndexZone(key, index2, ds+is-HEADER_SIZE, file, ds, is, full, keySec) // vrattiti nes
+			}
 		}
 	}
 
@@ -259,11 +283,17 @@ func checkIndexZone(key string, iPos int64, maxPos int64, file *os.File, ds int6
 			if key >= key1 && key2 > key && keySec == "" {
 				return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli smo opseg ulazimo u data zonu
 			}
-			if key >= key1[:len(key)] && keySec != "" {
-				return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli opseg pa idemo u index zonu
+			if len(key) <= len(key1) {
+				if key >= key1[:len(key)] && keySec != "" {
+					return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli opseg pa idemo u index zonu
+				}
+			} else {
+				if key >= key1 && keySec != "" {
+					return checkDataZone(key, index1, index2, file, ds, full, keySec) // nasli opseg pa idemo u index zonu
+				}
 			}
 		} else {
-			if key >= key1[:len(key)] && key2[:len(key)] > key {
+			if key >= key1 && key2 > key {
 				return checkDataZone(key, index1, index2, file, ds, full, keySec)
 			}
 		}
@@ -274,27 +304,50 @@ func checkIndexZone(key string, iPos int64, maxPos int64, file *os.File, ds int6
 	}
 	// kao i u summary odvajamo slucajeve da li se trazi prefix
 	if full {
-		if key >= key2[:len(key)] && maxPos == ds+is-HEADER_SIZE {
-			return checkDataZone(key, index2, ds, file, ds, full, keySec)
+		if len(key) <= len(key2) {
+			if key >= key2[:len(key)] && maxPos == ds+is-HEADER_SIZE {
+				return checkDataZone(key, index2, ds, file, ds, full, keySec)
+			} else {
+				var keyLen int64
+				keyLenB := make([]byte, K_SIZE)
+				_, err = bufferedReader.Read(keyLenB)
+				if err != nil {
+					return []record.Record{}
+				}
+				binary.Read(bytes.NewReader(keyLenB), binary.LittleEndian, &keyLen)
+				otherLenB := make([]byte, keyLen+VALUE_SIZE_LEN)
+				_, err = bufferedReader.Read(otherLenB)
+				if err != nil {
+					return []record.Record{}
+				}
+				key2 = string(otherLenB[0:keyLen])
+				binary.Read(bytes.NewReader(otherLenB[keyLen:]), binary.LittleEndian, &index2)
+				return checkDataZone(key, index1, index2, file, ds, full, keySec)
+			}
 		} else {
-			var keyLen int64
-			keyLenB := make([]byte, K_SIZE)
-			_, err = bufferedReader.Read(keyLenB)
-			if err != nil {
-				return []record.Record{}
+			if key >= key2 && maxPos == ds+is-HEADER_SIZE {
+				return checkDataZone(key, index2, ds, file, ds, full, keySec)
+			} else {
+				var keyLen int64
+				keyLenB := make([]byte, K_SIZE)
+				_, err = bufferedReader.Read(keyLenB)
+				if err != nil {
+					return []record.Record{}
+				}
+				binary.Read(bytes.NewReader(keyLenB), binary.LittleEndian, &keyLen)
+				otherLenB := make([]byte, keyLen+VALUE_SIZE_LEN)
+				_, err = bufferedReader.Read(otherLenB)
+				if err != nil {
+					return []record.Record{}
+				}
+				key2 = string(otherLenB[0:keyLen])
+				binary.Read(bytes.NewReader(otherLenB[keyLen:]), binary.LittleEndian, &index2)
+				return checkDataZone(key, index1, index2, file, ds, full, keySec)
 			}
-			binary.Read(bytes.NewReader(keyLenB), binary.LittleEndian, &keyLen)
-			otherLenB := make([]byte, keyLen+VALUE_SIZE_LEN)
-			_, err = bufferedReader.Read(otherLenB)
-			if err != nil {
-				return []record.Record{}
-			}
-			key2 = string(otherLenB[0:keyLen])
-			binary.Read(bytes.NewReader(otherLenB[keyLen:]), binary.LittleEndian, &index2)
-			return checkDataZone(key, index1, index2, file, ds, full, keySec)
 		}
+
 	} else {
-		if key >= key2[:len(key)] && maxPos == ds+is-HEADER_SIZE {
+		if key >= key2 && maxPos == ds+is-HEADER_SIZE {
 			return checkDataZone(key, index2, ds, file, ds, full, keySec)
 		} else {
 			var keyLen int64
@@ -372,20 +425,25 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 			vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
 		}
 	} else {
-		if key == newKey[:len(key)] {
-			vrednost := otherB[TIMESTAMP_LEN+TOMBSTONE_LEN+keyLen:]
-			binary.Read(bytes.NewReader(otherB[:TIMESTAMP_LEN]), binary.LittleEndian, &timestamp)
-			binary.Read(bytes.NewReader(otherB[TIMESTAMP_LEN:TIMESTAMP_LEN+TOMBSTONE_LEN]), binary.LittleEndian, &tombstone)
-			var tombstoneb bool
-			if tombstone == 0 {
-				tombstoneb = false
-			} else {
-				tombstoneb = true
+		if len(key) <= len(newKey) {
+			if key == newKey[:len(key)] {
+				vrednost := otherB[TIMESTAMP_LEN+TOMBSTONE_LEN+keyLen:]
+				binary.Read(bytes.NewReader(otherB[:TIMESTAMP_LEN]), binary.LittleEndian, &timestamp)
+				binary.Read(bytes.NewReader(otherB[TIMESTAMP_LEN:TIMESTAMP_LEN+TOMBSTONE_LEN]), binary.LittleEndian, &tombstone)
+				var tombstoneb bool
+				if tombstone == 0 {
+					tombstoneb = false
+				} else {
+					tombstoneb = true
+				}
+				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
 			}
-			vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
 		}
 	}
 	iPos += keyLen + valueLen + KEY_SIZE_LEN + VALUE_SIZE_LEN + TIMESTAMP_LEN + TOMBSTONE_LEN
+	if iPos >= ds {
+		return vrednosti
+	}
 	// u slucaju da se trazi samo kljuc sa odredjeno vrednoscu vrtimo se dok njega ne pronadjemo ili dok ne dodjemo do kraja te zone
 	// ako se trazi range ili list onda se vrtimo do kraja opsega u ubacujemo poklapanja u listu koju vracamo
 	for iPos < maxPos {
@@ -441,23 +499,28 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 			}
 
 		} else {
-			if key == newKey[:len(key)] {
-				vrednost := otherB[TIMESTAMP_LEN+TOMBSTONE_LEN+keyLen:]
-				binary.Read(bytes.NewReader(otherB[:TIMESTAMP_LEN]), binary.LittleEndian, &timestamp)
-				binary.Read(bytes.NewReader(otherB[TIMESTAMP_LEN:TIMESTAMP_LEN+TOMBSTONE_LEN]), binary.LittleEndian, &tombstone)
-				var tombstoneb bool
-				if tombstone == 1 {
-					tombstoneb = true
-				} else {
-					tombstoneb = false
+			if len(key) <= len(newKey) {
+				if key == newKey[:len(key)] {
+					vrednost := otherB[TIMESTAMP_LEN+TOMBSTONE_LEN+keyLen:]
+					binary.Read(bytes.NewReader(otherB[:TIMESTAMP_LEN]), binary.LittleEndian, &timestamp)
+					binary.Read(bytes.NewReader(otherB[TIMESTAMP_LEN:TIMESTAMP_LEN+TOMBSTONE_LEN]), binary.LittleEndian, &tombstone)
+					var tombstoneb bool
+					if tombstone == 1 {
+						tombstoneb = true
+					} else {
+						tombstoneb = false
+					}
+					vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
 				}
-				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
 			}
 		}
 		if keySec != "" {
 			maxPos += keyLen + valueLen + KEY_SIZE_LEN + VALUE_SIZE_LEN + TIMESTAMP_LEN + TOMBSTONE_LEN
 		}
 		iPos += keyLen + valueLen + KEY_SIZE_LEN + VALUE_SIZE_LEN + TIMESTAMP_LEN + TOMBSTONE_LEN
+		if iPos >= ds {
+			return vrednosti
+		}
 	}
 	return vrednosti
 }
