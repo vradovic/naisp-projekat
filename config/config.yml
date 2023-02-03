@@ -10,13 +10,13 @@ cmsEpsilon : 0.001
 cmsDelta : 0.001
 
 # MEMTABLE
-memtableSize : 2
-structureType : "btree"
+memtableSize : 10
+structureType : "skiplist"
 skipListHeight : 5
 bTreeOrder : 3
 
 # TOKEN BUCKET
-tokenNumber : 6
+tokenNumber : 20
 tokenRefreshTime : 2
 
 # WAL
