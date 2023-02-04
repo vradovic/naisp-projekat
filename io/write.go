@@ -26,22 +26,9 @@ func Put(key string, value []byte, timestamp int64) bool {
 	return structures.Memtable.Write(record)
 }
 
-// GET (Provera da li postoji slog)
-func Get(key string) []byte {
-	value := structures.Memtable.Read(key)
-	if value != nil {
-		return value
-	}
-	value = structures.Cache.LookForRecord(key)
-	if value != nil {
-		return value
-	}
-	return nil
-}
-
 // DELETE (Brisanje sloga)
 func Delete(key string, timestamp int64) bool {
-	value := []byte("")
+	value := []byte("d")
 	tombstone := true
 
 	log, err := wal.NewWAL(config.GlobalConfig.WalPath)
