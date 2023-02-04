@@ -139,10 +139,8 @@ func (s *SkipList) List(prefix string) []record.Record {
 	breaker := false
 	for _, v := range items {
 		if strings.HasPrefix(v.Key, prefix) {
-			if !v.Tombstone {
-				list = append(list, v)
-				breaker = true
-			}
+			list = append(list, v)
+			breaker = true
 		} else if breaker {
 			break
 		}
@@ -160,9 +158,7 @@ func (s *SkipList) RangeScan(start string, finish string) []record.Record {
 	for _, v := range items {
 		if v.Key <= finish {
 			if v.Key >= start {
-				if !v.Tombstone {
-					list = append(list, v)
-				}
+				list = append(list, v)
 			}
 		} else {
 			break
