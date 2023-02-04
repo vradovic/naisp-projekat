@@ -108,8 +108,7 @@ func Menu() error {
 			} else {
 				key, _ := GetInput(false)
 				records := List(key)
-				fmt.Println(records)
-				// TODO: Paginacija ovde...
+				GetPage(records)
 			}
 
 		case "5": // RANGE SCAN
@@ -118,8 +117,7 @@ func Menu() error {
 			} else {
 				start, end := GetRangeScanInput()
 				records := RangeScan(start, end)
-				fmt.Println(records)
-				// TODO: Paginacija ovde...
+				GetPage(records)
 			}
 
 		case "x": // EXIT
