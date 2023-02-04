@@ -110,6 +110,14 @@ func (m *Memtable) Delete(r record.Record) bool {
 	return success
 }
 
+func (m *Memtable) List(prefix string) []record.Record {
+	return m.structure.List(prefix)
+}
+
+func (m *Memtable) RangeScan(start, end string) []record.Record {
+	return m.structure.RangeScan(start, end)
+}
+
 func (m *Memtable) recover() error {
 	walFile, err := os.Open(config.GlobalConfig.WalPath)
 	defer walFile.Close()
