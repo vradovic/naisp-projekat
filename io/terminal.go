@@ -34,6 +34,8 @@ func Menu() error {
 		fmt.Println("1. Write")
 		fmt.Println("2. Read")
 		fmt.Println("3. Delete")
+		fmt.Println("4. List")
+		fmt.Println("5. Range scan")
 		fmt.Println("x. Exit")
 		fmt.Println("----------")
 		fmt.Println()
