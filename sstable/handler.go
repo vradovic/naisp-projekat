@@ -41,6 +41,9 @@ func ReadTables(keys []string, full bool) []record.Record {
 	if err != nil {
 		panic(err)
 	}
+	if len(tables) <= 0 {
+		return nil
+	}
 
 	var records [][]record.Record
 
