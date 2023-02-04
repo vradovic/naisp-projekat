@@ -3,6 +3,7 @@ package sstable
 import (
 	"github.com/vradovic/naisp-projekat/record"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -27,6 +28,10 @@ func getTables() ([]string, error) {
 		}
 	}
 
+	sort.Slice(files, func(i, j int) bool {
+		return files[i] > files[j]
+	})
+
 	return files, nil
 }
 
@@ -44,10 +49,41 @@ func ReadTables(keys []string, full bool) []record.Record {
 		records = append(records, data)
 	}
 
-	var query []record.Record
-	for _, r := range records {
-		query = append(query, r...)
+	result := mergeData(records)
+
+	return result
+}
+
+func mergeData(data [][]record.Record) []record.Record {
+	freshTable := data[0] // Najsvezija tabela
+
+	for i := 1; i < len(data); i++ {
+		for _, rec := range data[i] {
+			if !containsRecord(freshTable, rec) {
+				freshTable = append(freshTable, rec)
+			}
+		}
 	}
 
-	return query
+	var result []record.Record
+	for _, rec := range freshTable {
+		if !rec.Tombstone {
+			result = append(result, rec)
+		}
+	}
+
+	return result
+}
+
+func containsRecord(table []record.Record, target record.Record) bool {
+	found := false
+
+	for _, rec := range table {
+		if rec.Key == target.Key {
+			found = true
+			break
+		}
+	}
+
+	return found
 }
