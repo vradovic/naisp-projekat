@@ -28,7 +28,7 @@ func Put(key string, value []byte, timestamp int64) bool {
 
 // DELETE (Brisanje sloga)
 func Delete(key string, timestamp int64) bool {
-	value := []byte("")
+	value := []byte("d")
 	tombstone := true
 
 	log, err := wal.NewWAL(config.GlobalConfig.WalPath)

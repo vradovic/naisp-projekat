@@ -27,6 +27,20 @@ func GetInput(isNewWrite bool) (string, []byte) {
 	return key, []byte(value)
 }
 
+func GetRangeScanInput() (string, string) {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	fmt.Print("Start: ")
+	scanner.Scan()
+	start := scanner.Text()
+
+	fmt.Print("End: ")
+	scanner.Scan()
+	end := scanner.Text()
+
+	return start, end
+}
+
 func Menu() error {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
@@ -88,7 +102,25 @@ func Menu() error {
 				}
 			}
 
-			// TODO: Implementirati list i range scan
+		case "4": // LIST
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println(tokenBucket.FAIL_MSG)
+			} else {
+				key, _ := GetInput(false)
+				records := List(key)
+				fmt.Println(records)
+				// TODO: Paginacija ovde...
+			}
+
+		case "5": // RANGE SCAN
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println(tokenBucket.FAIL_MSG)
+			} else {
+				start, end := GetRangeScanInput()
+				records := RangeScan(start, end)
+				fmt.Println(records)
+				// TODO: Paginacija ovde...
+			}
 
 		case "x": // EXIT
 			return nil

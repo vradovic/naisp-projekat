@@ -59,7 +59,7 @@ func mergeData(data [][]record.Record) []record.Record {
 
 	for i := 1; i < len(data); i++ {
 		for _, rec := range data[i] {
-			if !containsRecord(freshTable, rec) {
+			if !ContainsRecord(freshTable, rec) {
 				freshTable = append(freshTable, rec)
 			}
 		}
@@ -75,7 +75,7 @@ func mergeData(data [][]record.Record) []record.Record {
 	return result
 }
 
-func containsRecord(table []record.Record, target record.Record) bool {
+func ContainsRecord(table []record.Record, target record.Record) bool {
 	found := false
 
 	for _, rec := range table {
