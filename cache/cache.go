@@ -47,14 +47,14 @@ func (c *Cache) AddRecord(rec record.Record) {
 
 // doesn't change cache if there isn't a record with that key because that record maybe doesn't exist in the database
 // returns ture if it is found in cache
-func (c *Cache) LookForRecord(key string) []byte {
+func (c *Cache) LookForRecord(key string) (record.Record, bool) {
 	element, ok := c.hashMap[key]
 	if ok {
 		record := element.Value.(record.Record)
 		c.AddRecord(record)
-		return record.Value
+		return record, true
 	} else {
-		return nil
+		return record.Record{}, false
 	}
 }
 

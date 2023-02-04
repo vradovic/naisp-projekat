@@ -134,10 +134,8 @@ func (b *BTree) List(prefix string) []record.Record {
 	breaker := false
 	for _, v := range items {
 		if strings.HasPrefix(v.Key, prefix) {
-			if !v.Tombstone {
-				list = append(list, v)
-				breaker = true
-			}
+			list = append(list, v)
+			breaker = true
 		} else if breaker {
 			break
 		}
@@ -155,9 +153,7 @@ func (b *BTree) RangeScan(start string, finish string) []record.Record {
 	for _, v := range items {
 		if v.Key <= finish {
 			if v.Key >= start {
-				if !v.Tombstone {
-					list = append(list, v)
-				}
+				list = append(list, v)
 			}
 		} else {
 			break
@@ -207,19 +203,19 @@ func (b *BTree) GetSize() uint {
 	return uint(b.size)
 }
 
-func (b *BTree) Read(key string) []byte {
+func (b *BTree) Read(key string) (record.Record, bool) {
 	return b.ReadAll(key, b.root)
 }
 
-func (b *BTree) ReadAll(key string, x *BTreeNode) []byte {
+func (b *BTree) ReadAll(key string, x *BTreeNode) (record.Record, bool) {
 	i := 0
 	for i < len(x.record) && key > x.record[i].Key {
 		i += 1
 	}
 	if i < len(x.record) && key == x.record[i].Key {
-		return (x.record[i].Value)
+		return *x.record[i], true
 	} else if x.leaf {
-		return nil
+		return record.Record{}, false
 	} else {
 		return b.ReadAll(key, x.child[i])
 	}

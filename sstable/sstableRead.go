@@ -11,7 +11,7 @@ import (
 )
 
 // f-ja prima kljuc putanju do fajla i vrednost da li se trazi prefix
-func findByKey(keys []string, path string, full bool) []record.Record {
+func FindByKey(keys []string, path string, full bool) []record.Record {
 	f, err := os.OpenFile(path, os.O_RDONLY, 0600)
 	if err != nil {
 		panic(err)
@@ -428,9 +428,8 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 			} else {
 				tombstoneb = true
 			}
-			if !tombstoneb {
-				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
-			}
+			vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+
 			return vrednosti
 		}
 		if keySec != "" && key <= newKey && key <= keySec {
@@ -443,9 +442,7 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 			} else {
 				tombstoneb = true
 			}
-			if !tombstoneb {
-				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
-			}
+			vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
 		}
 	} else {
 		if len(key) <= len(newKey) {
@@ -459,9 +456,7 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 				} else {
 					tombstoneb = true
 				}
-				if !tombstoneb {
-					vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
-				}
+				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
 			}
 		}
 	}
@@ -507,9 +502,8 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 				} else {
 					tombstoneb = true
 				}
-				if !tombstoneb {
-					vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
-				}
+				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+
 				return vrednosti
 			}
 			if keySec != "" && key <= newKey && key <= keySec {
@@ -522,9 +516,8 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 				} else {
 					tombstoneb = true
 				}
-				if !tombstoneb {
-					vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
-				}
+				vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
+
 			}
 
 		} else {
@@ -542,9 +535,7 @@ func checkDataZone(key string, iPos int64, maxPos int64, file *os.File, ds int64
 					} else {
 						tombstoneb = false
 					}
-					if !tombstoneb {
-						vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
-					}
+					vrednosti = append(vrednosti, record.Record{Key: string(newKey), Value: vrednost, Timestamp: timestamp, Tombstone: tombstoneb})
 				}
 			}
 		}

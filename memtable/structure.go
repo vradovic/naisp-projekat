@@ -6,7 +6,7 @@ import "github.com/vradovic/naisp-projekat/record"
 type Structure interface {
 	GetSize() uint
 	Write(r record.Record) bool
-	Read(key string) []byte
+	Read(key string) (record.Record, bool)
 	Delete(r record.Record) bool
 	GetItems() []record.Record
 	List(prefix string) []record.Record

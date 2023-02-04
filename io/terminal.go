@@ -3,6 +3,7 @@ package io
 import (
 	"bufio"
 	"fmt"
+	"github.com/vradovic/naisp-projekat/tokenBucket"
 	"os"
 	"time"
 
@@ -26,6 +27,20 @@ func GetInput(isNewWrite bool) (string, []byte) {
 	return key, []byte(value)
 }
 
+func GetRangeScanInput() (string, string) {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	fmt.Print("Start: ")
+	scanner.Scan()
+	start := scanner.Text()
+
+	fmt.Print("End: ")
+	scanner.Scan()
+	end := scanner.Text()
+
+	return start, end
+}
+
 func Menu() error {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
@@ -34,6 +49,8 @@ func Menu() error {
 		fmt.Println("1. Write")
 		fmt.Println("2. Read")
 		fmt.Println("3. Delete")
+		fmt.Println("4. List")
+		fmt.Println("5. Range scan")
 		fmt.Println("x. Exit")
 		fmt.Println("----------")
 		fmt.Println()
@@ -44,7 +61,7 @@ func Menu() error {
 		switch scanner.Text() {
 		case "1": // PUT
 			if !structures.TokenBucket.AddRequest("user") {
-				fmt.Println("Nemate pravo na vise zahteva. Molimo sacekajte.")
+				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
 				key, value := GetInput(true)
 				timestamp := time.Now().UnixNano()
@@ -59,20 +76,20 @@ func Menu() error {
 
 		case "2": // READ
 			if !structures.TokenBucket.AddRequest("user") {
-				fmt.Println("Nemate pravo na vise zahteva. Molimo sacekajte.")
+				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
 				key, _ := GetInput(false)
-				value := Get(key)
-				if value == nil {
+				rec := Get(key)
+				if rec.Tombstone || rec.Key == "" {
 					fmt.Println("Record not found")
 				} else {
-					fmt.Printf("Record found: %s %s", key, string(value))
+					fmt.Printf("Record found: %s %s", key, string(rec.Value))
 				}
 			}
 
 		case "3": // DELETE
 			if !structures.TokenBucket.AddRequest("user") {
-				fmt.Println("Nemate pravo na vise zahteva. Molimo sacekajte.")
+				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
 				key, _ := GetInput(false)
 				timestamp := time.Now().UnixNano()
@@ -83,6 +100,26 @@ func Menu() error {
 				} else {
 					fmt.Println("Delete failed.")
 				}
+			}
+
+		case "4": // LIST
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println(tokenBucket.FAIL_MSG)
+			} else {
+				key, _ := GetInput(false)
+				records := List(key)
+				fmt.Println(records)
+				// TODO: Paginacija ovde...
+			}
+
+		case "5": // RANGE SCAN
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println(tokenBucket.FAIL_MSG)
+			} else {
+				start, end := GetRangeScanInput()
+				records := RangeScan(start, end)
+				fmt.Println(records)
+				// TODO: Paginacija ovde...
 			}
 
 		case "x": // EXIT
