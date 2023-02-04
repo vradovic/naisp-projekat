@@ -113,7 +113,6 @@ func GetPage(records []record.Record) {
 			fmt.Println("Invalid input. Not a number.")
 			continue
 		} else {
-			fmt.Println("You entered:", num)
 			if num < 1 {
 				fmt.Println("Invalid number of pages.. Try again.")
 				continue
@@ -134,7 +133,6 @@ func GetPage(records []record.Record) {
 			fmt.Println("Invalid input. Not a number.")
 			continue
 		} else {
-			fmt.Println("You entered:", num)
 			if num < 1 || num > numOfPages {
 				fmt.Printf("Invalid page number... Try again from range [1-%d]\n", numOfPages)
 				continue
@@ -144,19 +142,80 @@ func GetPage(records []record.Record) {
 		}
 	}
 
-	if (pageNum-1)*numOfRecords+numOfRecords > len(records) {
-		pageRecords := records[(pageNum-1)*numOfRecords:]
-		printPage(pageRecords, pageNum)
-	} else {
-		pageRecords := records[(pageNum-1)*numOfRecords : (pageNum-1)*numOfRecords+numOfRecords]
-		printPage(pageRecords, pageNum)
+	for {
+		var pageRecords []record.Record
+		if (pageNum-1)*numOfRecords+numOfRecords > len(records) {
+			pageRecords = records[(pageNum-1)*numOfRecords:]
+		} else {
+			pageRecords = records[(pageNum-1)*numOfRecords : (pageNum-1)*numOfRecords+numOfRecords]
+		}
+		movePages := printPage(pageRecords, pageNum, numOfPages)
+		if movePages == 0 {
+			break
+		} else {
+			pageNum += movePages
+			continue
+		}
 	}
 
 }
 
-func printPage(records []record.Record, pageNum int) {
-	fmt.Printf("=========STRANICA %d=========\n", pageNum)
+func printPage(records []record.Record, pageNum, numOfPages int) int {
+	var next string
+	fmt.Printf("\n==================STRANICA %d==================\n", pageNum)
 	for i := 0; i < len(records); i++ {
 		fmt.Printf("%s : %s\n", records[i].Key, string(records[i].Value))
 	}
+	switch pageNum {
+	case 1:
+		if pageNum == numOfPages {
+			fmt.Println("------------------------------------------------")
+			fmt.Println("			X			")
+		} else {
+			fmt.Println("------------------------------------------------")
+			fmt.Println("			X			R")
+		}
+	case numOfPages:
+		fmt.Println("------------------------------------------------")
+		fmt.Println("L			X			")
+	default:
+		fmt.Println("------------------------------------------------")
+		fmt.Println("L			X			R")
+	}
+	for {
+		fmt.Scanln(&next)
+		switch next {
+		case "r":
+			if pageNum != numOfPages {
+				return 1
+			}
+			fmt.Println("There are no next pages. Try again... ")
+
+		case "R":
+			if pageNum != numOfPages {
+				return 1
+			}
+			fmt.Println("There are no next pages. Try again... ")
+
+		case "L":
+			if pageNum != 1 {
+				return -1
+			}
+			fmt.Println("There are no previous pages. Try again... ")
+
+		case "l":
+			if pageNum != 1 {
+				return -1
+			}
+			fmt.Println("There are no previous pages. Try again...")
+		case "x":
+			return 0
+		case "X":
+			return 0
+		default:
+			fmt.Println("Invalid option (l / x / r). Try again...")
+		}
+
+	}
+
 }
