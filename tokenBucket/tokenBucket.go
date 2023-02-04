@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+const FAIL_MSG = "Out of requests."
+
 type Token struct {
 	TokenNumber int
 	Timestamp   time.Time

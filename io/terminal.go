@@ -3,6 +3,7 @@ package io
 import (
 	"bufio"
 	"fmt"
+	"github.com/vradovic/naisp-projekat/tokenBucket"
 	"os"
 	"time"
 
@@ -46,7 +47,7 @@ func Menu() error {
 		switch scanner.Text() {
 		case "1": // PUT
 			if !structures.TokenBucket.AddRequest("user") {
-				fmt.Println("Nemate pravo na vise zahteva. Molimo sacekajte.")
+				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
 				key, value := GetInput(true)
 				timestamp := time.Now().UnixNano()
@@ -61,7 +62,7 @@ func Menu() error {
 
 		case "2": // READ
 			if !structures.TokenBucket.AddRequest("user") {
-				fmt.Println("Nemate pravo na vise zahteva. Molimo sacekajte.")
+				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
 				key, _ := GetInput(false)
 				value := Get(key)
@@ -74,7 +75,7 @@ func Menu() error {
 
 		case "3": // DELETE
 			if !structures.TokenBucket.AddRequest("user") {
-				fmt.Println("Nemate pravo na vise zahteva. Molimo sacekajte.")
+				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
 				key, _ := GetInput(false)
 				timestamp := time.Now().UnixNano()
