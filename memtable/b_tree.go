@@ -86,7 +86,9 @@ func (b *BTree) InsertBTree(r record.Record) bool {
 func (b *BTree) insertNonFull(root *BTreeNode, r record.Record) {
 	i := len(root.record) - 1
 	if root.leaf {
-		root.record = append(root.record, &record.Record{Key: "", Value: nil})
+		wr := make([]*record.Record, len(root.record))
+		copy(wr, root.record)
+		root.record = append(wr, &record.Record{Key: "", Value: nil})
 		for i >= 0 && r.Key < root.record[i].Key {
 			root.record[i+1] = root.record[i]
 			i--
