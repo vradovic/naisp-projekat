@@ -201,19 +201,19 @@ func (b *BTree) GetSize() uint {
 	return uint(b.size)
 }
 
-func (b *BTree) Read(key string) []byte {
+func (b *BTree) Read(key string) (record.Record, bool) {
 	return b.ReadAll(key, b.root)
 }
 
-func (b *BTree) ReadAll(key string, x *BTreeNode) []byte {
+func (b *BTree) ReadAll(key string, x *BTreeNode) (record.Record, bool) {
 	i := 0
 	for i < len(x.record) && key > x.record[i].Key {
 		i += 1
 	}
 	if i < len(x.record) && key == x.record[i].Key {
-		return (x.record[i].Value)
+		return *x.record[i], true
 	} else if x.leaf {
-		return nil
+		return record.Record{}, false
 	} else {
 		return b.ReadAll(key, x.child[i])
 	}

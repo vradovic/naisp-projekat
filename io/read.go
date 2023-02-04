@@ -7,24 +7,24 @@ import (
 )
 
 // GET (Dobavljanje sloga)
-func Get(key string) []byte {
-	value := structures.Memtable.Read(key)
-	if value != nil {
-		return value
-	}
-	value = structures.Cache.LookForRecord(key)
-	if value != nil {
-		return value
+func Get(key string) record.Record {
+	rec, exists := structures.Memtable.Read(key)
+	if exists {
+		return rec
 	}
 
-	query := sstable.ReadTables([]string{key}, true)
-	if len(query) <= 0 {
-		return nil
+	rec, exists = structures.Cache.LookForRecord(key)
+	if exists {
+		return rec
 	}
 
-	value = query[0].Value
+	records := sstable.ReadTables([]string{key}, true)
+	if len(records) > 0 {
+		structures.Cache.AddRecord(records[0])
+		return records[0]
+	}
 
-	return value
+	return record.Record{}
 }
 
 func List(key string) []record.Record {

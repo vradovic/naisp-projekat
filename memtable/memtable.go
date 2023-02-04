@@ -86,7 +86,7 @@ func (m *Memtable) Write(r record.Record) bool {
 	return success
 }
 
-func (m *Memtable) Read(key string) []byte {
+func (m *Memtable) Read(key string) (record.Record, bool) {
 	return m.structure.Read(key)
 }
 

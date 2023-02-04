@@ -92,7 +92,7 @@ func (s SkipList) randomLevel() int {
 	return level
 }
 
-func (s SkipList) Read(key string) []byte {
+func (s SkipList) Read(key string) (record.Record, bool) {
 	current := s.header
 	for i := s.level; i > -1; i-- {
 		for (current.forward[i] != nil) && (current.forward[i].record.Key < key) {
@@ -100,14 +100,14 @@ func (s SkipList) Read(key string) []byte {
 		}
 	}
 	current = current.forward[0]
-	if current != nil && current.record.Key == key && !current.record.Tombstone {
+	if current != nil && current.record.Key == key {
 		// fmt.Print("Found key :")
 		// fmt.Print(key)
 		// fmt.Print("\n")
-		return current.record.Value
+		return current.record, true
 	}
 
-	return nil
+	return record.Record{}, false
 }
 
 func (s *SkipList) Delete(r record.Record) bool {

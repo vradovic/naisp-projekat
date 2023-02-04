@@ -79,11 +79,11 @@ func Menu() error {
 				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
 				key, _ := GetInput(false)
-				value := Get(key)
-				if value == nil {
+				rec := Get(key)
+				if rec.Tombstone || rec.Key == "" {
 					fmt.Println("Record not found")
 				} else {
-					fmt.Printf("Record found: %s %s", key, string(value))
+					fmt.Printf("Record found: %s %s", key, string(rec.Value))
 				}
 			}
 
