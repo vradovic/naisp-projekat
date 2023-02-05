@@ -8,8 +8,8 @@ import (
 )
 
 type SimHash struct {
-	text        string
-	fingerPrint []byte
+	Text        string
+	FingerPrint []byte
 }
 
 func NewSimHash(text string) *SimHash {
@@ -68,7 +68,7 @@ func NewSimHash(text string) *SimHash {
 }
 
 func (s1 SimHash) Distance(s2 *SimHash) int {
-	result := xorBytes(s1.fingerPrint, s2.fingerPrint)
+	result := xorBytes(s1.FingerPrint, s2.FingerPrint)
 	return countOnes(result)
 
 }

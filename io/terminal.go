@@ -17,15 +17,27 @@ func GetInput(isNewWrite bool) (string, []byte) {
 	fmt.Print("Key: ")
 	scanner.Scan()
 	key := scanner.Text()
-
 	var value = ""
+
 	if isNewWrite { // Samo ukoliko je novi zapis
 		fmt.Print("Value: ")
 		scanner.Scan()
 		value = scanner.Text()
 	}
 
-	return key, []byte(value)
+	var bytes []byte
+
+	if isSpecialKey(key) {
+		var err error
+		bytes, err = serializeStructure(key, value)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		bytes = []byte(value)
+	}
+
+	return key, bytes
 }
 
 func GetRangeScanInput() (string, string) {

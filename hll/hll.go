@@ -11,16 +11,16 @@ import (
 )
 
 type hyperLogLog struct {
-	registers []int
-	m         uint // number of registers
-	b         uint // bits to calculate [4..16]
+	Registers []int
+	M         uint // number of registers
+	B         uint // bits to calculate [4..16]
 }
 
 func NewHyperLogLog(m uint) hyperLogLog {
 	return hyperLogLog{
-		registers: make([]int, m),
-		m:         m,
-		b:         uint(math.Ceil(math.Log2(float64(m)))),
+		Registers: make([]int, m),
+		M:         m,
+		B:         uint(math.Ceil(math.Log2(float64(m)))),
 	}
 }
 
@@ -49,20 +49,20 @@ func createHash(stream []byte) uint32 {
 
 func (h hyperLogLog) Add(data []byte) hyperLogLog {
 	x := createHash(data)
-	k := 32 - h.b // first b bits
-	r := leftmostActiveBit(x << h.b)
+	k := 32 - h.B // first b bits
+	r := leftmostActiveBit(x << h.B)
 	j := x >> uint(k)
 
-	if r > h.registers[j] {
-		h.registers[j] = r
+	if r > h.Registers[j] {
+		h.Registers[j] = r
 	}
 	return h
 }
 
 func (h hyperLogLog) Count() uint64 {
 	sum := 0.
-	m := float64(h.m)
-	for _, v := range h.registers {
+	m := float64(h.M)
+	for _, v := range h.Registers {
 		sum += math.Pow(math.Pow(2, float64(v)), -1)
 	}
 	estimate := .79402 * m * m / sum
