@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 
 	"github.com/vradovic/naisp-projekat/wal"
 
@@ -52,6 +53,9 @@ func NewMemtable(maxSize uint, structureName string) *Memtable {
 // FLush na disk
 func (m *Memtable) Flush() error {
 	records := m.structure.GetItems() // Uzmi sve elemente iz strukture
+	sort.Slice(records, func(i, j int) bool {
+		return records[i].Key < records[j].Key
+	})
 	// for _, record := range records {
 	// 	fmt.Println(record.Key)
 	// }

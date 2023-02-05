@@ -1,9 +1,9 @@
 package bloomfilter
 
 import (
+	"bytes"
 	"encoding/gob"
 	"math"
-	"os"
 )
 
 type BloomFilter struct {
@@ -63,28 +63,24 @@ func (b BloomFilter) Read(data []byte) bool {
 	return true
 }
 
-func (b BloomFilter) Save(filePath string) {
-	file, err := os.Create(filePath)
-	if err != nil {
-		panic("error during file creation")
-	}
-
-	encoder := gob.NewEncoder(file)
+func (b BloomFilter) Save() []byte {
+	var buffer bytes.Buffer
+	encoder := gob.NewEncoder(&buffer)
 	encoder.Encode(b)
-	file.Close()
+
+	return buffer.Bytes()
 }
 
-func Load(filePath string, b *BloomFilter) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		panic("error when opening file")
-	}
+func Load(data []byte) *BloomFilter {
+	var buffer bytes.Buffer
+	buffer.Write(data)
+	decoder := gob.NewDecoder(&buffer)
 
-	decoder := gob.NewDecoder(file)
-	err2 := decoder.Decode(b)
-	if err2 != nil {
+	b := &BloomFilter{}
+	err := decoder.Decode(b)
+	if err != nil {
 		panic("error while decoding")
 	}
 
-	file.Close()
+	return b
 }
