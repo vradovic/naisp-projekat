@@ -72,7 +72,7 @@ func BuildMerkleTree(data [][]byte, unixTime int64) {
 	defer file.Close()
 	root := &MerkleRoot{root: nodes[0]}
 	SerializeMerkleTree(root.root, file)
-	fmt.Println("Merkle tree serialized to file")
+	//fmt.Println("Merkle tree serialized to file")
 
 	// return &MerkleRoot{root: nodes[0]}
 }

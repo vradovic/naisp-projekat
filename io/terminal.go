@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/vradovic/naisp-projekat/bloomfilter"
 	"github.com/vradovic/naisp-projekat/cms"
+	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/hll"
 	"github.com/vradovic/naisp-projekat/lsm"
 	"github.com/vradovic/naisp-projekat/simhash"
@@ -160,9 +161,13 @@ func Menu() error {
 			}
 
 		case "6": // COMPACT
-			err := lsm.SizeTiered()
-			if err != nil {
-				return err
+			if config.GlobalConfig.CompactionAlgorithm == "sizeTiered" {
+				err := lsm.SizeTiered()
+				if err != nil {
+					return err
+				}
+			} else {
+				lsm.LeveledCompaction()
 			}
 
 		case "7": // ADD TO STRUCT

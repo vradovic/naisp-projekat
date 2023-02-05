@@ -3,10 +3,11 @@ package memtable
 import (
 	"errors"
 	"fmt"
-	"github.com/vradovic/naisp-projekat/wal"
 	"io"
 	"os"
 	"sort"
+
+	"github.com/vradovic/naisp-projekat/wal"
 
 	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/record"
