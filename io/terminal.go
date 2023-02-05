@@ -3,6 +3,7 @@ package io
 import (
 	"bufio"
 	"fmt"
+	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/lsm"
 	"github.com/vradovic/naisp-projekat/tokenBucket"
 	"os"
@@ -123,9 +124,13 @@ func Menu() error {
 			}
 
 		case "6": // COMPACT
-			err := lsm.SizeTiered()
-			if err != nil {
-				return err
+			if config.GlobalConfig.CompactionAlgorithm == "sizeTiered" {
+				err := lsm.SizeTiered()
+				if err != nil {
+					return err
+				}
+			} else {
+				lsm.LeveledCompaction()
 			}
 
 		case "x": // EXIT

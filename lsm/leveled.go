@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	SSTABLE_SIZE = 100
+	SSTABLE_SIZE = 1500
 )
 
 type ByKey []record.Record
