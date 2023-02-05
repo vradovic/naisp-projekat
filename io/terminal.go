@@ -3,6 +3,9 @@ package io
 import (
 	"bufio"
 	"fmt"
+	"github.com/vradovic/naisp-projekat/bloomfilter"
+	"github.com/vradovic/naisp-projekat/cms"
+	"github.com/vradovic/naisp-projekat/hll"
 	"github.com/vradovic/naisp-projekat/lsm"
 	"github.com/vradovic/naisp-projekat/tokenBucket"
 	"os"
@@ -11,7 +14,7 @@ import (
 	"github.com/vradovic/naisp-projekat/structures"
 )
 
-func GetInput(isNewWrite bool) (string, []byte) {
+func GetInput(isNewWrite bool, omitSpecial bool) (string, []byte) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Print("Key: ")
@@ -27,7 +30,7 @@ func GetInput(isNewWrite bool) (string, []byte) {
 
 	var bytes []byte
 
-	if isSpecialKey(key) {
+	if isSpecialKey(key) && !omitSpecial {
 		var err error
 		bytes, err = serializeStructure(key, value)
 		if err != nil {
@@ -65,6 +68,8 @@ func Menu() error {
 		fmt.Println("4. List")
 		fmt.Println("5. Range scan")
 		fmt.Println("6. Compact")
+		fmt.Println("7. Add to struct")
+		fmt.Println("8. Read from struct")
 		fmt.Println("x. Exit")
 		fmt.Println("----------")
 		fmt.Println()
@@ -77,7 +82,7 @@ func Menu() error {
 			if !structures.TokenBucket.AddRequest("user") {
 				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
-				key, value := GetInput(true)
+				key, value := GetInput(true, false)
 				timestamp := time.Now().UnixNano()
 
 				success := Put(key, value, timestamp)
@@ -92,7 +97,7 @@ func Menu() error {
 			if !structures.TokenBucket.AddRequest("user") {
 				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
-				key, _ := GetInput(false)
+				key, _ := GetInput(false, false)
 				rec := Get(key)
 				if rec.Tombstone || rec.Key == "" {
 					fmt.Println("Record not found")
@@ -105,7 +110,7 @@ func Menu() error {
 			if !structures.TokenBucket.AddRequest("user") {
 				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
-				key, _ := GetInput(false)
+				key, _ := GetInput(false, false)
 				timestamp := time.Now().UnixNano()
 
 				success := Delete(key, timestamp)
@@ -120,7 +125,7 @@ func Menu() error {
 			if !structures.TokenBucket.AddRequest("user") {
 				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
-				key, _ := GetInput(false)
+				key, _ := GetInput(false, false)
 				records := List(key)
 				GetPage(records)
 			}
@@ -138,6 +143,78 @@ func Menu() error {
 			err := lsm.SizeTiered()
 			if err != nil {
 				return err
+			}
+
+		case "7": // ADD TO STRUCT
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println(tokenBucket.FAIL_MSG)
+			} else {
+				key, val := GetInput(true, true)
+				rec := Get(key)
+				if rec.Tombstone || rec.Key == "" {
+					fmt.Println("Record not found")
+					continue
+				}
+
+				var bytes []byte
+				timestamp := time.Now().UnixNano()
+
+				switch key[0] {
+				case '!':
+					h := hll.Load(rec.Value)
+					h.Add(val)
+					bytes = h.Save()
+				case '?':
+					c := cms.Load(rec.Value)
+					c.Add(val)
+					bytes = c.Save()
+				case '%':
+					b := bloomfilter.Load(rec.Value)
+					b.Add(val)
+					bytes = b.Save()
+				default:
+					fmt.Println("Not structure type.")
+					continue
+				}
+
+				success := Put(key, bytes, timestamp)
+				if success {
+					fmt.Println("Saved.")
+				} else {
+					fmt.Println("Failed.")
+				}
+			}
+
+		case "8": // READ FROM STRUCT
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println(tokenBucket.FAIL_MSG)
+			} else {
+				key, val := GetInput(true, true)
+				rec := Get(key)
+				if rec.Tombstone || rec.Key == "" {
+					fmt.Println("Record not found")
+					continue
+				}
+
+				switch key[0] {
+				case '!':
+					h := hll.Load(rec.Value)
+					fmt.Println(fmt.Sprint(h.Count(), " elements"))
+				case '?':
+					c := cms.Load(rec.Value)
+					n := c.Read(val)
+					fmt.Println(fmt.Sprint(n, " occurrences"))
+				case '%':
+					b := bloomfilter.Load(rec.Value)
+					if b.Read(val) {
+						fmt.Println("Maybe exists")
+					} else {
+						fmt.Println("Does not exist")
+					}
+				default:
+					fmt.Println("Not structure type.")
+					continue
+				}
 			}
 
 		case "x": // EXIT

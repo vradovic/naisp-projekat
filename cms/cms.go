@@ -1,9 +1,8 @@
 package cms
 
 import (
+	"bytes"
 	"encoding/gob"
-	"os"
-
 	"github.com/vradovic/naisp-projekat/util"
 )
 
@@ -57,38 +56,24 @@ func (c Cms) Read(data []byte) uint64 {
 	return min
 }
 
-// Cuvanje
-func (c Cms) Save(filePath string) error {
-	file, err := os.Create(filePath)
+func (c Cms) Save() []byte {
+	var buffer bytes.Buffer
+	encoder := gob.NewEncoder(&buffer)
+	encoder.Encode(c)
 
-	if err == nil {
-		encoder := gob.NewEncoder(file)
-		encoder.Encode(c)
-		file.Close()
-	}
-
-	return err
+	return buffer.Bytes()
 }
 
-// Ucitavanje
-func Load(filePath string) (*Cms, error) {
+func Load(data []byte) *Cms {
+	var buffer bytes.Buffer
+	buffer.Write(data)
+	decoder := gob.NewDecoder(&buffer)
+
 	c := &Cms{}
-
-	file, file_err := os.Open(filePath)
-
-	if file_err != nil {
-		file.Close()
-		return c, file_err
+	err := decoder.Decode(c)
+	if err != nil {
+		panic("error while decoding")
 	}
 
-	decoder := gob.NewDecoder(file)
-	decode_err := decoder.Decode(c)
-
-	if decode_err != nil {
-		file.Close()
-		return c, decode_err
-	}
-
-	file.Close()
-	return c, nil
+	return c
 }

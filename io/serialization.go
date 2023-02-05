@@ -28,7 +28,7 @@ func serializeStructure(key, val string) ([]byte, error) {
 		err = encoder.Encode(*cmsketch)
 	case '#':
 		simh := simhash.NewSimHash(val)
-		err = encoder.Encode(simh)
+		err = encoder.Encode(*simh)
 	case '%':
 		bf := bloomfilter.NewBloomFilter(config.GlobalConfig.BloomExpectedElements, config.GlobalConfig.BloomFalsePositiveRate)
 		err = encoder.Encode(*bf)

@@ -1,8 +1,9 @@
 package hll
 
 import (
+	"bytes"
 	"encoding/binary"
-	"fmt"
+	"encoding/gob"
 	"hash/fnv"
 	"math"
 	"math/bits"
@@ -10,14 +11,14 @@ import (
 	"time"
 )
 
-type hyperLogLog struct {
+type HyperLogLog struct {
 	Registers []int
 	M         uint // number of registers
 	B         uint // bits to calculate [4..16]
 }
 
-func NewHyperLogLog(m uint) hyperLogLog {
-	return hyperLogLog{
+func NewHyperLogLog(m uint) HyperLogLog {
+	return HyperLogLog{
 		Registers: make([]int, m),
 		M:         m,
 		B:         uint(math.Ceil(math.Log2(float64(m)))),
@@ -47,7 +48,7 @@ func createHash(stream []byte) uint32 {
 	return sum
 }
 
-func (h hyperLogLog) Add(data []byte) hyperLogLog {
+func (h HyperLogLog) Add(data []byte) HyperLogLog {
 	x := createHash(data)
 	k := 32 - h.B // first b bits
 	r := leftmostActiveBit(x << h.B)
@@ -59,7 +60,7 @@ func (h hyperLogLog) Add(data []byte) hyperLogLog {
 	return h
 }
 
-func (h hyperLogLog) Count() uint64 {
+func (h HyperLogLog) Count() uint64 {
 	sum := 0.
 	m := float64(h.M)
 	for _, v := range h.Registers {
@@ -91,15 +92,24 @@ func classicCountDistinct(input []uint32) int {
 	return len(m)
 }
 
-func main() {
-	bs, is := getRandomData()
-	dt := classicCountDistinct(is)
-	h := NewHyperLogLog(64)
-	for _, b := range bs {
-		h.Add(b)
+func (h HyperLogLog) Save() []byte {
+	var buffer bytes.Buffer
+	encoder := gob.NewEncoder(&buffer)
+	encoder.Encode(h)
+
+	return buffer.Bytes()
+}
+
+func Load(data []byte) *HyperLogLog {
+	var buffer bytes.Buffer
+	buffer.Write(data)
+	decoder := gob.NewDecoder(&buffer)
+
+	h := &HyperLogLog{}
+	err := decoder.Decode(h)
+	if err != nil {
+		panic("error while decoding")
 	}
-	hd := h.Count()
-	fmt.Printf("classic estimate: %v\n", dt)
-	fmt.Printf("hyperloglog estimate: %v\n", hd)
-	fmt.Printf("percentage missed: %.2f\n", 100.-(float64(hd)/float64(dt))*100)
+
+	return h
 }
