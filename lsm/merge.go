@@ -137,9 +137,9 @@ func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) [
 
 		// Uporedjivanje
 		if firstUnit.r.Key == secondUnit.r.Key {
-			if firstUnit.isNewer(secondUnit) && firstUnit.isAlive() {
+			if firstUnit.isNewer(secondUnit) {
 				records = append(records, *firstUnit.r)
-			} else if secondUnit.isNewer(firstUnit) && secondUnit.isAlive() {
+			} else {
 				records = append(records, *secondUnit.r)
 			}
 
@@ -147,26 +147,18 @@ func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) [
 			secondUnit.nextRecord()
 		} else if firstUnit.r.Key > secondUnit.r.Key {
 			if secondUnit.end {
-				if firstUnit.isAlive() {
-					records = append(records, *firstUnit.r)
-				}
+				records = append(records, *firstUnit.r)
 				firstUnit.nextRecord()
 			} else {
-				if secondUnit.isAlive() {
-					records = append(records, *secondUnit.r)
-				}
+				records = append(records, *secondUnit.r)
 				secondUnit.nextRecord()
 			}
 		} else if secondUnit.r.Key > firstUnit.r.Key {
 			if firstUnit.end {
-				if secondUnit.isAlive() {
-					records = append(records, *secondUnit.r)
-				}
+				records = append(records, *secondUnit.r)
 				secondUnit.nextRecord()
 			} else {
-				if firstUnit.isAlive() {
-					records = append(records, *firstUnit.r)
-				}
+				records = append(records, *firstUnit.r)
 				firstUnit.nextRecord()
 			}
 		}
