@@ -2,7 +2,6 @@ package lsm
 
 import (
 	"encoding/binary"
-	"fmt"
 	"github.com/vradovic/naisp-projekat/record"
 	"github.com/vradovic/naisp-projekat/sstable"
 	"os"
@@ -49,7 +48,6 @@ func MergeTables(first, second string, level int) error {
 	// Redosledna obrada
 	records := sequentialUpdate(firstFile, secondFile, firstLength, secondLength)
 
-	fmt.Println(records)
 	sstable.NewSSTable(&records, level)
 
 	err = firstFile.Close()

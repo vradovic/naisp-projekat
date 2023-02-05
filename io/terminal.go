@@ -17,16 +17,31 @@ import (
 
 func GetInput(isNewWrite bool, omitSpecial bool) (string, []byte) {
 	scanner := bufio.NewScanner(os.Stdin)
+	var key, value string
+	value = ""
 
-	fmt.Print("Key: ")
-	scanner.Scan()
-	key := scanner.Text()
-	var value = ""
+	for {
+		fmt.Print("Key: ")
+		scanner.Scan()
+		key = scanner.Text()
+		if len(key) <= 0 {
+			fmt.Println("Empty key")
+			continue
+		}
+		break
+	}
 
 	if isNewWrite { // Samo ukoliko je novi zapis
-		fmt.Print("Value: ")
-		scanner.Scan()
-		value = scanner.Text()
+		for {
+			fmt.Print("Value: ")
+			scanner.Scan()
+			value = scanner.Text()
+			if len(value) <= 0 {
+				fmt.Println("Empty value")
+				continue
+			}
+			break
+		}
 	}
 
 	var bytes []byte
@@ -63,7 +78,7 @@ func Menu() error {
 	for {
 		fmt.Println()
 		fmt.Println("----------")
-		fmt.Println("1. Write")
+		fmt.Println("1. Write (! - hyperloglog, ? - cms, # - simhash, % - bloomfilter)")
 		fmt.Println("2. Read")
 		fmt.Println("3. Delete")
 		fmt.Println("4. List")
@@ -85,6 +100,7 @@ func Menu() error {
 				fmt.Println(tokenBucket.FAIL_MSG)
 			} else {
 				key, value := GetInput(true, false)
+
 				timestamp := time.Now().UnixNano()
 
 				success := Put(key, value, timestamp)
@@ -104,7 +120,9 @@ func Menu() error {
 				if rec.Tombstone || rec.Key == "" {
 					fmt.Println("Record not found")
 				} else {
-					fmt.Printf("Record found: %s %s", key, string(rec.Value))
+					fmt.Print("Record found: ")
+					fmt.Println(key)
+					fmt.Println(string(rec.Value))
 				}
 			}
 
@@ -201,7 +219,7 @@ func Menu() error {
 				switch key[0] {
 				case '!':
 					h := hll.Load(rec.Value)
-					fmt.Println(fmt.Sprint(h.Count(), " elements"))
+					fmt.Println(fmt.Sprint(h.Count()-12, " elements"))
 				case '?':
 					c := cms.Load(rec.Value)
 					n := c.Read(val)
