@@ -66,6 +66,8 @@ func mergeData(data [][]record.Record) []record.Record {
 		for _, rec := range data[i] {
 			if !ContainsRecord(freshTable, rec) {
 				freshTable = append(freshTable, rec)
+			} else {
+				swapNewerRecord(&freshTable, rec)
 			}
 		}
 	}
@@ -78,6 +80,14 @@ func mergeData(data [][]record.Record) []record.Record {
 	}
 
 	return result
+}
+
+func swapNewerRecord(table *[]record.Record, rec record.Record) {
+	for i, r := range *table {
+		if rec.Key == r.Key && rec.Timestamp > r.Timestamp {
+			(*table)[i] = rec
+		}
+	}
 }
 
 func ContainsRecord(table []record.Record, target record.Record) bool {
