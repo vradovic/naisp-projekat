@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/vradovic/naisp-projekat/record"
 	"github.com/vradovic/naisp-projekat/sstable"
-	"math"
 	"os"
 )
 
@@ -48,16 +47,30 @@ func MergeTables(first, second string, level int) error {
 	}
 
 	// Redosledna obrada
-	records, err := sequentialUpdate(firstFile, secondFile, firstLength, secondLength)
+	records := sequentialUpdate(firstFile, secondFile, firstLength, secondLength)
+
+	fmt.Println(records)
+	sstable.NewSSTable(&records, level)
+
+	err = firstFile.Close()
 	if err != nil {
 		return err
 	}
 
-	firstFile.Close()
-	secondFile.Close()
+	err = secondFile.Close()
+	if err != nil {
+		return err
+	}
 
-	fmt.Println(records)
-	sstable.NewSSTable(&records, level)
+	err = os.Remove(first)
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove(second)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -75,88 +88,91 @@ func getDataSegmentLength(f *os.File) (int64, error) {
 	return length, nil
 }
 
-func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) ([]record.Record, error) {
-	var firstReadBytes, secondReadBytes int64 = 0, 0
-	var firstRecord, secondRecord record.Record
+type Unit struct {
+	r     *record.Record
+	end   bool
+	f     *os.File
+	top   int
+	count int
+}
+
+func (u *Unit) isNewer(other Unit) bool {
+	return u.r.Timestamp > other.r.Timestamp
+}
+
+func (u *Unit) isAlive() bool {
+	return !u.r.Tombstone
+}
+
+func (u *Unit) nextRecord() {
+	u.count++
+	if u.count > u.top {
+		u.end = true
+	}
+
+	if !u.end {
+		rec, _, err := bytesToRecord(u.f)
+		if err != nil {
+			panic(err)
+		}
+		u.r = &rec
+	}
+}
+
+func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) []record.Record {
 	records := make([]record.Record, 0)
 
-	var bytes int64
-	var err error
-	firstRecord, bytes, err = bytesToRecord(first)
-	secondRecord, bytes, err = bytesToRecord(second)
+	firstRecordsNum := sstable.CountRecords(first.Name())
+	secondRecordsNum := sstable.CountRecords(second.Name())
 
-	if err != nil {
-		return []record.Record{}, err
-	}
-	secondReadBytes += bytes
-	if err != nil {
-		return []record.Record{}, err
-	}
-	firstReadBytes += bytes
+	firstUnit := Unit{r: nil, end: false, f: first, top: firstRecordsNum, count: 0}
+	secondUnit := Unit{r: nil, end: false, f: second, top: secondRecordsNum, count: 0}
 
-	for (firstReadBytes < firstLength || secondReadBytes < secondLength) && !(firstRecord.Key == "~" && secondRecord.Key == "~") {
+	for !firstUnit.end || !secondUnit.end {
+		// Prvo citanje
+		if firstUnit.count == 0 && secondUnit.count == 0 {
+			firstUnit.nextRecord()
+			secondUnit.nextRecord()
+		}
 
-		// Poredjenje
-		if firstRecord.Key == secondRecord.Key {
-			if firstRecord.Timestamp > secondRecord.Timestamp && !firstRecord.Tombstone {
-				records = append(records, firstRecord)
-			} else if firstRecord.Timestamp <= secondRecord.Timestamp && !secondRecord.Tombstone {
-				records = append(records, secondRecord)
+		// Uporedjivanje
+		if firstUnit.r.Key == secondUnit.r.Key {
+			if firstUnit.isNewer(secondUnit) && firstUnit.isAlive() {
+				records = append(records, *firstUnit.r)
+			} else if secondUnit.isNewer(firstUnit) && secondUnit.isAlive() {
+				records = append(records, *secondUnit.r)
 			}
 
-			if firstReadBytes < firstLength && math.Abs(float64(firstReadBytes-firstLength)) > 25 {
-				firstRecord, bytes, err = bytesToRecord(first)
-				if err != nil {
-					return []record.Record{}, err
+			firstUnit.nextRecord()
+			secondUnit.nextRecord()
+		} else if firstUnit.r.Key > secondUnit.r.Key {
+			if secondUnit.end {
+				if firstUnit.isAlive() {
+					records = append(records, *firstUnit.r)
 				}
-				firstReadBytes += bytes
+				firstUnit.nextRecord()
 			} else {
-				firstRecord.Key = "~"
-			}
-
-			if secondReadBytes < secondLength && math.Abs(float64(secondReadBytes-secondLength)) > 25 {
-				secondRecord, bytes, err = bytesToRecord(second)
-				if err != nil {
-					return []record.Record{}, err
+				if secondUnit.isAlive() {
+					records = append(records, *secondUnit.r)
 				}
-				secondReadBytes += bytes
-			} else {
-				secondRecord.Key = "~"
+				secondUnit.nextRecord()
 			}
-
-		} else if firstRecord.Key > secondRecord.Key {
-			if !secondRecord.Tombstone {
-				records = append(records, secondRecord)
-			}
-
-			if secondReadBytes < secondLength && math.Abs(float64(secondReadBytes-secondLength)) > 25 {
-				secondRecord, bytes, err = bytesToRecord(second)
-				if err != nil {
-					return []record.Record{}, err
+		} else if secondUnit.r.Key > firstUnit.r.Key {
+			if firstUnit.end {
+				if secondUnit.isAlive() {
+					records = append(records, *secondUnit.r)
 				}
-				secondReadBytes += bytes
+				secondUnit.nextRecord()
 			} else {
-				secondRecord.Key = "~"
-			}
-
-		} else if firstRecord.Key < secondRecord.Key {
-			if !firstRecord.Tombstone {
-				records = append(records, firstRecord)
-			}
-
-			if firstReadBytes < firstLength && math.Abs(float64(firstReadBytes-firstLength)) > 25 {
-				firstRecord, bytes, err = bytesToRecord(first)
-				if err != nil {
-					return []record.Record{}, err
+				if firstUnit.isAlive() {
+					records = append(records, *firstUnit.r)
 				}
-				firstReadBytes += bytes
-			} else {
-				firstRecord.Key = "~"
+				firstUnit.nextRecord()
 			}
 		}
 	}
 
-	return records, nil
+	return records
 }
 
 func bytesToRecord(f *os.File) (record.Record, int64, error) {

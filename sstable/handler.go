@@ -1,10 +1,12 @@
 package sstable
 
 import (
+	"encoding/binary"
 	"os"
 	"sort"
 	"strings"
 
+	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/record"
 )
 
@@ -65,6 +67,8 @@ func mergeData(data [][]record.Record) []record.Record {
 		for _, rec := range data[i] {
 			if !ContainsRecord(freshTable, rec) {
 				freshTable = append(freshTable, rec)
+			} else {
+				swapNewerRecord(&freshTable, rec)
 			}
 		}
 	}
@@ -79,6 +83,14 @@ func mergeData(data [][]record.Record) []record.Record {
 	return result
 }
 
+func swapNewerRecord(table *[]record.Record, rec record.Record) {
+	for i, r := range *table {
+		if rec.Key == r.Key && rec.Timestamp > r.Timestamp {
+			(*table)[i] = rec
+		}
+	}
+}
+
 func ContainsRecord(table []record.Record, target record.Record) bool {
 	found := false
 
@@ -90,4 +102,47 @@ func ContainsRecord(table []record.Record, target record.Record) bool {
 	}
 
 	return found
+}
+
+func CountRecords(path string) int {
+	f, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	buffer := make([]byte, 8)
+	_, err = f.Read(buffer)
+
+	dataSegmentLength := int(binary.LittleEndian.Uint64(buffer)) - 32 // Duzina data segmenta u bajtovima
+	byteCounter := 0
+	counter := 0
+	recordSize := config.GlobalConfig.KeySizeSize + config.GlobalConfig.ValueSizeSize + config.GlobalConfig.TimestampSize + config.GlobalConfig.TombstoneSize
+
+	_, err = f.Seek(32, 0)
+
+	for byteCounter < dataSegmentLength {
+		keySizeBuff := make([]byte, config.GlobalConfig.KeySizeSize)
+		_, err = f.Read(keySizeBuff)
+		if err != nil {
+			panic(err)
+		}
+		keySize := binary.LittleEndian.Uint64(keySizeBuff)
+
+		valueSizeBuff := make([]byte, config.GlobalConfig.ValueSizeSize)
+		_, err = f.Read(valueSizeBuff)
+		if err != nil {
+			panic(err)
+		}
+		valueSize := binary.LittleEndian.Uint64(valueSizeBuff)
+
+		totalSize := recordSize + int(keySize) + int(valueSize)
+		byteCounter += totalSize
+
+		offset := totalSize - config.GlobalConfig.KeySizeSize - config.GlobalConfig.ValueSizeSize
+		_, err = f.Seek(int64(offset), 1)
+		counter++
+	}
+
+	return counter
 }

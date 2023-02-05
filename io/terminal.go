@@ -3,6 +3,7 @@ package io
 import (
 	"bufio"
 	"fmt"
+	"github.com/vradovic/naisp-projekat/lsm"
 	"github.com/vradovic/naisp-projekat/tokenBucket"
 	"os"
 	"time"
@@ -51,6 +52,7 @@ func Menu() error {
 		fmt.Println("3. Delete")
 		fmt.Println("4. List")
 		fmt.Println("5. Range scan")
+		fmt.Println("6. Compact")
 		fmt.Println("x. Exit")
 		fmt.Println("----------")
 		fmt.Println()
@@ -118,6 +120,12 @@ func Menu() error {
 				start, end := GetRangeScanInput()
 				records := RangeScan(start, end)
 				GetPage(records)
+			}
+
+		case "6": // COMPACT
+			err := lsm.SizeTiered()
+			if err != nil {
+				return err
 			}
 
 		case "x": // EXIT

@@ -14,6 +14,9 @@ func main() {
 	if err != nil {
 		panic("Greska")
 	}
+<<<<<<< HEAD
 
 	lsm.LeveledCompaction()
+=======
+>>>>>>> 0420c7af431d4d640e2692f3d5c97f7adac11060
 }

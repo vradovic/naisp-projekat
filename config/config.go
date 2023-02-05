@@ -12,30 +12,36 @@ import (
 var GlobalConfig Config
 
 const (
-	EXPECTED_EL         = 1000
-	FALSE_POSITIVE_RATE = 0.001
-	CMS_EPSILON         = 0.001
-	CMS_DELTA           = 0.001
-	CACHE_CAP           = 100
-	MEMTABLE_SIZE       = 10
-	STRUCTURE_TYPE      = "skiplist"
-	SKIP_LIST_HEIGHT    = 10
-	B_TREE_ORDER        = 3
-	TOKEN_NUMBER        = 20
-	TOKEN_REFRESH_TIME  = 2
-	WAL_PATH            = "resources\\wal.log"
-	MAX_ENTRY_SIZE      = 1024
-	CRC_SIZE            = 4
-	TIMESTAMP_SIZE      = 8
-	TOMBSTONE_SIZE      = 1
-	KEY_SIZE_SIZE       = 8
-	VALUE_SIZE_SIZE     = 8
-	CRC_START           = 0
-	TIMESTAMP_START     = CRC_START + CRC_SIZE
-	TOMBSTONE_START     = TIMESTAMP_START + TIMESTAMP_SIZE
-	KEY_SIZE_START      = TOMBSTONE_START + TOMBSTONE_SIZE
-	VALUE_SIZE_START    = KEY_SIZE_START + KEY_SIZE_SIZE
-	KEY_START           = VALUE_SIZE_START + VALUE_SIZE_SIZE
+	EXPECTED_EL          = 1000
+	FALSE_POSITIVE_RATE  = 0.001
+	CMS_EPSILON          = 0.001
+	CMS_DELTA            = 0.001
+	CACHE_CAP            = 100
+	MEMTABLE_SIZE        = 10
+	STRUCTURE_TYPE       = "skiplist"
+	SKIP_LIST_HEIGHT     = 10
+	B_TREE_ORDER         = 3
+	TOKEN_NUMBER         = 20
+	TOKEN_REFRESH_TIME   = 2
+	WAL_PATH             = "resources\\wal.log"
+	MAX_ENTRY_SIZE       = 1024
+	CRC_SIZE             = 4
+	TIMESTAMP_SIZE       = 8
+	TOMBSTONE_SIZE       = 1
+	KEY_SIZE_SIZE        = 8
+	VALUE_SIZE_SIZE      = 8
+	CRC_START            = 0
+	MAX_LEVELS           = 4
+	MAX_BYTES            = 5000
+	MAX_TABLES           = 2
+	SCALING_FACTOR       = 2
+	COMPACTION_ALGORITHM = "sizeTiered"
+	CONDITION            = "tables"
+	TIMESTAMP_START      = CRC_START + CRC_SIZE
+	TOMBSTONE_START      = TIMESTAMP_START + TIMESTAMP_SIZE
+	KEY_SIZE_START       = TOMBSTONE_START + TOMBSTONE_SIZE
+	VALUE_SIZE_START     = KEY_SIZE_START + KEY_SIZE_SIZE
+	KEY_START            = VALUE_SIZE_START + VALUE_SIZE_SIZE
 )
 
 type Config struct {
@@ -57,6 +63,12 @@ type Config struct {
 	KeySizeSize            int     `yaml:"keySizeSize"`
 	ValueSizeSize          int     `yaml:"valueSizeSize"`
 	CrcStart               int     `yaml:"crcStart"`
+	MaxLevels              int     `yaml:"maxLevels"`
+	MaxBytes               int     `yaml:"maxBytes"`
+	MaxTables              int     `yaml:"maxTables"`
+	ScalingFactor          int     `yaml:"scalingFactor"`
+	CompactionAlgorithm    string  `yaml:"compactionAlgorithm"`
+	Condition              string  `yaml:"condition"`
 	TimestampStart         int     `yaml:"timestampStart"`
 	TombstoneStart         int     `yaml:"tombstoneStart"`
 	KeySizeStart           int     `yaml:"keySizeStart"`
@@ -88,6 +100,12 @@ func NewConfig(filename string) *Config {
 		config.ValueSizeSize = VALUE_SIZE_SIZE
 		config.CrcStart = CRC_START
 		config.BTreeOrder = B_TREE_ORDER
+		config.MaxLevels = MAX_LEVELS
+		config.MaxBytes = MAX_BYTES
+		config.MaxTables = MAX_TABLES
+		config.ScalingFactor = SCALING_FACTOR
+		config.CompactionAlgorithm = COMPACTION_ALGORITHM
+		config.Condition = CONDITION
 		config.TimestampStart = TIMESTAMP_START
 		config.TombstoneStart = TOMBSTONE_START
 		config.KeySizeStart = KEY_SIZE_START
