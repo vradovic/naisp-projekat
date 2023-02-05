@@ -89,11 +89,11 @@ func getDataSegmentLength(f *os.File) (int64, error) {
 }
 
 type Unit struct {
-	r      *record.Record
-	isLast bool
-	f      *os.File
-	top    int
-	count  int
+	r     *record.Record
+	end   bool
+	f     *os.File
+	top   int
+	count int
 }
 
 func (u *Unit) isNewer(other Unit) bool {
@@ -105,16 +105,17 @@ func (u *Unit) isAlive() bool {
 }
 
 func (u *Unit) nextRecord() {
-	if !u.isLast {
+	u.count++
+	if u.count > u.top {
+		u.end = true
+	}
+
+	if !u.end {
 		rec, _, err := bytesToRecord(u.f)
 		if err != nil {
 			panic(err)
 		}
 		u.r = &rec
-		u.count++
-		if u.count >= u.top {
-			u.isLast = true
-		}
 	}
 }
 
@@ -124,41 +125,14 @@ func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) [
 	firstRecordsNum := sstable.CountRecords(first.Name())
 	secondRecordsNum := sstable.CountRecords(second.Name())
 
-	firstUnit := Unit{r: nil, isLast: false, f: first, top: firstRecordsNum, count: 0}
-	secondUnit := Unit{r: nil, isLast: false, f: second, top: secondRecordsNum, count: 0}
+	firstUnit := Unit{r: nil, end: false, f: first, top: firstRecordsNum, count: 0}
+	secondUnit := Unit{r: nil, end: false, f: second, top: secondRecordsNum, count: 0}
 
-	for {
+	for !firstUnit.end || !secondUnit.end {
 		// Prvo citanje
 		if firstUnit.count == 0 && secondUnit.count == 0 {
 			firstUnit.nextRecord()
 			secondUnit.nextRecord()
-		}
-
-		// Zadnji elementi
-		if firstUnit.isLast && secondUnit.isLast {
-			if firstUnit.r.Key == secondUnit.r.Key {
-				if firstUnit.isNewer(secondUnit) && firstUnit.isAlive() {
-					records = append(records, *firstUnit.r)
-				} else if secondUnit.isNewer(firstUnit) && secondUnit.isAlive() {
-					records = append(records, *secondUnit.r)
-				}
-			} else if firstUnit.r.Key > secondUnit.r.Key {
-				if secondUnit.isAlive() {
-					records = append(records, *secondUnit.r)
-				}
-				if firstUnit.isAlive() {
-					records = append(records, *firstUnit.r)
-				}
-			} else if secondUnit.r.Key > firstUnit.r.Key {
-				if firstUnit.isAlive() {
-					records = append(records, *firstUnit.r)
-				}
-				if secondUnit.isAlive() {
-					records = append(records, *secondUnit.r)
-				}
-			}
-
-			break
 		}
 
 		// Uporedjivanje
@@ -172,7 +146,7 @@ func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) [
 			firstUnit.nextRecord()
 			secondUnit.nextRecord()
 		} else if firstUnit.r.Key > secondUnit.r.Key {
-			if secondUnit.isLast {
+			if secondUnit.end {
 				if firstUnit.isAlive() {
 					records = append(records, *firstUnit.r)
 				}
@@ -184,7 +158,7 @@ func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) [
 				secondUnit.nextRecord()
 			}
 		} else if secondUnit.r.Key > firstUnit.r.Key {
-			if firstUnit.isLast {
+			if firstUnit.end {
 				if secondUnit.isAlive() {
 					records = append(records, *secondUnit.r)
 				}
