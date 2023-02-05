@@ -188,11 +188,11 @@ func writeBloomFilter(sstable *SSTable) {
 }
 
 // poziv za kreiranje SSTable-a
-func NewSSTable(allRecords *[]record.Record) {
+func NewSSTable(allRecords *[]record.Record, level int) {
 	var sstable SSTable
 	sstable.unixTime = time.Now().UnixNano()
-	sstable.path = "resources\\file_" + fmt.Sprint(sstable.unixTime) + ".db" // dodati random naziva na ime
-	file, err := os.Create(sstable.path)                                     // nekom metodom davati imena, npr u ms vreme ili tako nes
+	sstable.path = "resources\\file_" + fmt.Sprint(sstable.unixTime) + "_" + fmt.Sprint(level) + ".db" // dodati random naziva na ime
+	file, err := os.Create(sstable.path)                                                               // nekom metodom davati imena, npr u ms vreme ili tako nes
 	if err != nil {
 		panic(err)
 	}

@@ -55,13 +55,11 @@ func (m *Memtable) Flush() error {
 	// 	fmt.Println(record.Key)
 	// }
 
-	sstable.NewSSTable(&records)
-
+	sstable.NewSSTable(&records, 1)
 	err := os.Truncate(config.GlobalConfig.WalPath, 0) // Resetovanje loga
 	if err != nil {
 		return err
 	}
-
 	fmt.Println("Memtable flushed!")
 	return nil
 }
