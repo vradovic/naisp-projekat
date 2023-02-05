@@ -1,0 +1,204 @@
+package lsm
+
+import (
+	"encoding/binary"
+	"fmt"
+	"os"
+	"sort"
+
+	"github.com/vradovic/naisp-projekat/record"
+	"github.com/vradovic/naisp-projekat/sstable"
+)
+
+const (
+	SSTABLE_SIZE = 100
+)
+
+type ByKey []record.Record
+
+func (a ByKey) Len() int {
+	return len(a)
+}
+
+func (a ByKey) Less(i, j int) bool {
+	return a[i].Key < a[j].Key
+}
+
+func (a ByKey) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+type Levels struct {
+	Levels []*Level
+}
+
+type Level struct {
+	Level  int
+	Tables []*os.File
+	Size   int
+}
+
+func NewLevel(currentLvl, size int) *Level {
+	var files []*os.File
+	return &Level{currentLvl + 1, files, size * 2}
+}
+
+func (lvl *Level) AddToLevel(path string, levels *Levels) {
+	var allRecords []record.Record
+	f, err := os.OpenFile(path, os.O_RDONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	newRecords := GetRecordsOutOfSS(f)
+	allRecords = append(allRecords, newRecords...)
+
+	for _, table := range lvl.Tables {
+
+		oldRecs := GetRecordsOutOfSS(table)
+		for _, rec := range oldRecs {
+			exists := false
+			for _, record := range newRecords {
+				if rec.Key == record.Key {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				allRecords = append(allRecords, rec)
+			}
+		}
+		//os.Remove(table.Name())
+	}
+
+	//os.Remove(path)
+	lvl.Tables = []*os.File{}
+
+	//Sortirani svi recordi po kljucu
+	sort.Sort(ByKey(allRecords))
+	current_size := 0
+	level_size := 0
+	var helper_list []record.Record
+
+	for _, record := range allRecords {
+		if current_size > SSTABLE_SIZE {
+			sstable.NewSSTable(&helper_list, lvl.Level)
+
+			newTable, _ := sstable.GetTables()
+			newFileName := newTable[0]
+			newFileName = "resources\\" + newFileName
+
+			newFile, err := os.OpenFile(newFileName, os.O_RDONLY, 0600)
+			if err != nil {
+				panic(err)
+			}
+
+			lvl.Tables = append(lvl.Tables, newFile)
+			helper_list = helper_list[:0]
+			level_size += current_size
+			current_size = 0
+			newFile.Close()
+
+		} else {
+			helper_list = append(helper_list, record)
+			current_size += 25 + len(record.Key) + len(record.Value)
+
+		}
+		if len(helper_list) != 0 {
+			sstable.NewSSTable(&helper_list, lvl.Level)
+
+			newTable, _ := sstable.GetTables()
+			newFileName := newTable[0]
+			newFileName = "resources\\" + newFileName
+
+			newFile, err := os.OpenFile(newFileName, os.O_RDONLY, 0600)
+			if err != nil {
+				panic(err)
+			}
+
+			lvl.Tables = append(lvl.Tables, newFile)
+			helper_list = helper_list[:0]
+			level_size += current_size
+			current_size = 0
+			newFile.Close()
+
+		}
+	}
+
+	if lvl.Size < level_size {
+		var nextLevel *Level
+		//TODO proveriti da li sme da pravi vise levela ili neka samo puni tu
+		for i := 0; i < len(levels.Levels); i++ {
+			if levels.Levels[i].Level == lvl.Level+1 {
+				nextLevel = levels.Levels[i]
+			}
+		}
+		if len(nextLevel.Tables) == 0 {
+			nextLevel = NewLevel(lvl.Level, lvl.Size)
+			levels.Levels = append(levels.Levels, nextLevel)
+		}
+		nextLevel.AddToLevel(lvl.Tables[0].Name(), levels)
+		lvl.Tables = lvl.Tables[1:]
+	}
+
+	//prebacivanje u drugi nivo odnosno proveravam da li postoji level vec, ako ne pravim ga i onda radim
+	//ako postoji onda mu pristupam i prolazim kroz add to level v
+
+}
+
+func LeveledCompaction() {
+	levels := Levels{}
+	tables, _ := sstable.GetTables()
+	//reverse the order from oldest to youngest
+	for i, j := 0, len(tables)-1; i < j; i, j = i+1, j-1 {
+		tables[i], tables[j] = tables[j], tables[i]
+	}
+	level1 := NewLevel(0, SSTABLE_SIZE)
+	levels.Levels = append(levels.Levels, level1)
+	for _, table := range tables {
+		level1.AddToLevel("resources\\"+table, &levels)
+	}
+}
+
+func GetRecordsOutOfSS(f *os.File) []record.Record {
+	var allRecords []record.Record
+	buffer := make([]byte, 8)
+	_, err := f.Read(buffer)
+
+	if err != nil {
+		fmt.Println("Error while reading header")
+	}
+
+	endOfRecords := binary.LittleEndian.Uint64(buffer)
+
+	f.Seek(32, 0)
+	for {
+		pos, _ := f.Seek(0, os.SEEK_CUR)
+		if uint64(pos) < endOfRecords {
+
+			record, _, err := bytesToRecord(f)
+			if err != nil {
+				panic(err)
+			}
+
+			allRecords = append(allRecords, record)
+
+			// _, err = f.Read(buffer)
+
+			// if err != nil {
+			// 	fmt.Println("Error while reading key size")
+			// }
+			// keySize := binary.LittleEndian.Uint64(buffer)
+
+			// // Value size
+			// _, err = f.Read(buffer)
+			// if err != nil {
+			// 	fmt.Println("Error while reading value size")
+			// }
+			// valueSize := binary.LittleEndian.Uint64(buffer)
+		} else {
+			return allRecords
+		}
+	}
+
+}

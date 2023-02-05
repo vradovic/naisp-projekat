@@ -56,10 +56,10 @@ func writeBlock(recordByte *[]byte, path string) {
 
 // pocetak upisa, prima sve "slogove" za upis
 func writeSSTable(allRecords *[]record.Record, sstable *SSTable) {
-	var block_size uint
+	// var block_size uint
 	// fmt.Print("Unesite velicinu data bloka: ") // bira se velicina bloka kojim ce biti odvojene sektori za pretragu
 	// fmt.Scan(&block_size)
-	block_size = 2
+	block_size := 2
 	for i, record := range *allRecords {
 
 		// upis u merkle
@@ -136,10 +136,10 @@ func writeHeader(sstable *SSTable) {
 
 // upis zone indeksa
 func writeIndex(sstable *SSTable) {
-	var block_size uint
+	// var block_size uint
 	// fmt.Print("Unesite velicinu index bloka: ")
 	// fmt.Scan(&block_size)
-	block_size = 2
+	block_size := 2
 	for i, key := range sstable.blockLeaders {
 		if i%int(block_size) == 0 {
 			sstable.indexLeaders = append(sstable.indexLeaders, key)

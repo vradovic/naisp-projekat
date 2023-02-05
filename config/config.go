@@ -1,8 +1,10 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -15,7 +17,7 @@ const (
 	CMS_EPSILON         = 0.001
 	CMS_DELTA           = 0.001
 	CACHE_CAP           = 100
-	MEMTABLE_SIZE       = 200
+	MEMTABLE_SIZE       = 10
 	STRUCTURE_TYPE      = "skiplist"
 	SKIP_LIST_HEIGHT    = 10
 	B_TREE_ORDER        = 3
@@ -29,12 +31,11 @@ const (
 	KEY_SIZE_SIZE       = 8
 	VALUE_SIZE_SIZE     = 8
 	CRC_START           = 0
-
-	// LSM TREE
-	MAX_BYTES            = 5000
-	MAX_TABLES           = 2
-	SCALING_FACTOR       = 2
-	COMPACTION_ALGORITHM = "sizeTiered"
+	TIMESTAMP_START     = CRC_START + CRC_SIZE
+	TOMBSTONE_START     = TIMESTAMP_START + TIMESTAMP_SIZE
+	KEY_SIZE_START      = TOMBSTONE_START + TOMBSTONE_SIZE
+	VALUE_SIZE_START    = KEY_SIZE_START + KEY_SIZE_SIZE
+	KEY_START           = VALUE_SIZE_START + VALUE_SIZE_SIZE
 )
 
 type Config struct {
@@ -56,18 +57,12 @@ type Config struct {
 	KeySizeSize            int     `yaml:"keySizeSize"`
 	ValueSizeSize          int     `yaml:"valueSizeSize"`
 	CrcStart               int     `yaml:"crcStart"`
-	TimestampStart         int
-	TombstoneStart         int
-	KeySizeStart           int
-	ValueSizeStart         int
-	KeyStart               int
-	BTreeOrder             int `yaml:"bTreeOrder"`
-
-	// LSM TREE
-	MaxBytes            int    `yaml:"maxBytes"`
-	MaxTables           int    `yaml:"maxTables"`
-	ScalingFactor       int    `yaml:"scalingFactor"`
-	CompactionAlgorithm string `yaml:"compactionAlgorithm"`
+	TimestampStart         int     `yaml:"timestampStart"`
+	TombstoneStart         int     `yaml:"tombstoneStart"`
+	KeySizeStart           int     `yaml:"keySizeStart"`
+	ValueSizeStart         int     `yaml:"ValueSizeStart"`
+	KeyStart               int     `yaml:"keyStart"`
+	BTreeOrder             int     `yaml:"bTreeOrder"`
 }
 
 func NewConfig(filename string) *Config {
@@ -93,29 +88,38 @@ func NewConfig(filename string) *Config {
 		config.ValueSizeSize = VALUE_SIZE_SIZE
 		config.CrcStart = CRC_START
 		config.BTreeOrder = B_TREE_ORDER
-
-		// LSM TREE
-		config.MaxBytes = MAX_BYTES
-		config.MaxTables = MAX_TABLES
-		config.ScalingFactor = SCALING_FACTOR
-		config.CompactionAlgorithm = COMPACTION_ALGORITHM
+		config.TimestampStart = TIMESTAMP_START
+		config.TombstoneStart = TOMBSTONE_START
+		config.KeySizeStart = KEY_SIZE_START
+		config.ValueSizeStart = VALUE_SIZE_START
+		config.KeyStart = KEY_START
+	} else {
+		err = yaml.Unmarshal(yamlFile, &config)
+		if err != nil {
+			fmt.Printf("Unmarshal: %v", err)
+		}
 	}
-
-	err = yaml.Unmarshal(yamlFile, &config)
-	if err != nil {
-		fmt.Printf("Unmarshal: %v", err)
-	}
-
-	config.TimestampStart = config.CrcStart + config.CrcSize
-	config.TombstoneStart = config.TimestampStart + config.TimestampSize
-	config.KeySizeStart = config.TombstoneStart + config.TombstoneSize
-	config.ValueSizeStart = config.KeySizeStart + config.KeySizeSize
-	config.KeyStart = config.ValueSizeStart + config.ValueSizeSize
 
 	return &config
-
 }
 
 func Init() {
-	GlobalConfig = *NewConfig("config\\config.yml")
+	PATH := "config\\config.yml"
+
+	GlobalConfig = *NewConfig(PATH)
+
+	if _, err := os.Stat(PATH); errors.Is(err, os.ErrNotExist) {
+		f, err := os.Create(PATH)
+		defer f.Close()
+		if err != nil {
+			panic(err)
+		}
+
+		out, err := yaml.Marshal(GlobalConfig)
+		if err != nil {
+			panic(err)
+		}
+
+		f.Write(out)
+	}
 }

@@ -92,7 +92,7 @@ func (s SkipList) randomLevel() int {
 	return level
 }
 
-func (s SkipList) Read(key string) []byte {
+func (s SkipList) Read(key string) (record.Record, bool) {
 	current := s.header
 	for i := s.level; i > -1; i-- {
 		for (current.forward[i] != nil) && (current.forward[i].record.Key < key) {
@@ -100,14 +100,14 @@ func (s SkipList) Read(key string) []byte {
 		}
 	}
 	current = current.forward[0]
-	if current != nil && current.record.Key == key && !current.record.Tombstone {
+	if current != nil && current.record.Key == key {
 		// fmt.Print("Found key :")
 		// fmt.Print(key)
 		// fmt.Print("\n")
-		return current.record.Value
+		return current.record, true
 	}
 
-	return nil
+	return record.Record{}, false
 }
 
 func (s *SkipList) Delete(r record.Record) bool {
@@ -139,10 +139,8 @@ func (s *SkipList) List(prefix string) []record.Record {
 	breaker := false
 	for _, v := range items {
 		if strings.HasPrefix(v.Key, prefix) {
-			if !v.Tombstone {
-				list = append(list, v)
-				breaker = true
-			}
+			list = append(list, v)
+			breaker = true
 		} else if breaker {
 			break
 		}
@@ -160,9 +158,7 @@ func (s *SkipList) RangeScan(start string, finish string) []record.Record {
 	for _, v := range items {
 		if v.Key <= finish {
 			if v.Key >= start {
-				if !v.Tombstone {
-					list = append(list, v)
-				}
+				list = append(list, v)
 			}
 		} else {
 			break
