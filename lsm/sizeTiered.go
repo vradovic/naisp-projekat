@@ -3,6 +3,7 @@ package lsm
 import (
 	"errors"
 	"github.com/vradovic/naisp-projekat/config"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -31,9 +32,21 @@ func SizeTiered() error {
 			return err
 		}
 
+		multiplier := math.Pow(float64(config.GlobalConfig.ScalingFactor), float64(lvl-1))
 		switch config.GlobalConfig.Condition {
 		case "tables":
-			if len(files) >= maxTables {
+			if len(files) >= maxTables*int(multiplier) {
+				err := compact(files, lvl+1)
+				if err != nil {
+					return err
+				}
+			}
+		case "bytes":
+			bytes, err := getLevelBytes(files)
+			if err != nil {
+				return err
+			}
+			if bytes >= maxBytes*int(multiplier) {
 				err := compact(files, lvl+1)
 				if err != nil {
 					return err
@@ -79,7 +92,41 @@ func compact(files []string, level int) error {
 		if err != nil {
 			return err
 		}
+
+		err = deleteMerkleTree(files[i-1])
+		if err != nil {
+			return err
+		}
+
+		err = deleteMerkleTree(files[i])
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
+}
+
+func deleteMerkleTree(tableFileName string) error {
+	timestamp := strings.Split(tableFileName, "_")[1]
+
+	err := os.Remove("resources\\MetaData_" + timestamp + ".txt")
+
+	return err
+}
+
+func getLevelBytes(files []string) (int, error) {
+	total := 0
+
+	for _, file := range files {
+		fi, err := os.Stat("resources\\" + file)
+		if err != nil {
+			return 0, err
+		}
+
+		size := fi.Size()
+		total += int(size)
+	}
+
+	return total, nil
 }
