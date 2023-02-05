@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/vradovic/naisp-projekat/record"
 	"github.com/vradovic/naisp-projekat/sstable"
-	"math"
 	"os"
 )
 
@@ -48,16 +47,20 @@ func MergeTables(first, second string, level int) error {
 	}
 
 	// Redosledna obrada
-	records, err := sequentialUpdate(firstFile, secondFile, firstLength, secondLength)
+	records := sequentialUpdate(firstFile, secondFile, firstLength, secondLength)
+
+	fmt.Println(records)
+	sstable.NewSSTable(&records, level)
+
+	err = firstFile.Close()
 	if err != nil {
 		return err
 	}
 
-	firstFile.Close()
-	secondFile.Close()
-
-	fmt.Println(records)
-	sstable.NewSSTable(&records, level)
+	err = secondFile.Close()
+	if err != nil {
+		return err
+	}
 
 	err = os.Remove(first)
 	if err != nil {
@@ -85,88 +88,117 @@ func getDataSegmentLength(f *os.File) (int64, error) {
 	return length, nil
 }
 
-func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) ([]record.Record, error) {
-	var firstReadBytes, secondReadBytes int64 = 0, 0
-	var firstRecord, secondRecord record.Record
+type Unit struct {
+	r      *record.Record
+	isLast bool
+	f      *os.File
+	top    int
+	count  int
+}
+
+func (u *Unit) isNewer(other Unit) bool {
+	return u.r.Timestamp > other.r.Timestamp
+}
+
+func (u *Unit) isAlive() bool {
+	return !u.r.Tombstone
+}
+
+func (u *Unit) nextRecord() {
+	if !u.isLast {
+		rec, _, err := bytesToRecord(u.f)
+		if err != nil {
+			panic(err)
+		}
+		u.r = &rec
+		u.count++
+		if u.count >= u.top {
+			u.isLast = true
+		}
+	}
+}
+
+func sequentialUpdate(first, second *os.File, firstLength, secondLength int64) []record.Record {
 	records := make([]record.Record, 0)
 
-	var bytes int64
-	var err error
-	firstRecord, bytes, err = bytesToRecord(first)
-	secondRecord, bytes, err = bytesToRecord(second)
+	firstRecordsNum := sstable.CountRecords(first.Name())
+	secondRecordsNum := sstable.CountRecords(second.Name())
 
-	if err != nil {
-		return []record.Record{}, err
-	}
-	secondReadBytes += bytes
-	if err != nil {
-		return []record.Record{}, err
-	}
-	firstReadBytes += bytes
+	firstUnit := Unit{r: nil, isLast: false, f: first, top: firstRecordsNum, count: 0}
+	secondUnit := Unit{r: nil, isLast: false, f: second, top: secondRecordsNum, count: 0}
 
-	for (firstReadBytes < firstLength || secondReadBytes < secondLength) && !(firstRecord.Key == "~" && secondRecord.Key == "~") {
+	for {
+		// Prvo citanje
+		if firstUnit.count == 0 && secondUnit.count == 0 {
+			firstUnit.nextRecord()
+			secondUnit.nextRecord()
+		}
 
-		// Poredjenje
-		if firstRecord.Key == secondRecord.Key {
-			if firstRecord.Timestamp > secondRecord.Timestamp && !firstRecord.Tombstone {
-				records = append(records, firstRecord)
-			} else if firstRecord.Timestamp <= secondRecord.Timestamp && !secondRecord.Tombstone {
-				records = append(records, secondRecord)
-			}
-
-			if firstReadBytes < firstLength && math.Abs(float64(firstReadBytes-firstLength)) > 25 {
-				firstRecord, bytes, err = bytesToRecord(first)
-				if err != nil {
-					return []record.Record{}, err
+		// Zadnji elementi
+		if firstUnit.isLast && secondUnit.isLast {
+			if firstUnit.r.Key == secondUnit.r.Key {
+				if firstUnit.isNewer(secondUnit) && firstUnit.isAlive() {
+					records = append(records, *firstUnit.r)
+				} else if secondUnit.isNewer(firstUnit) && secondUnit.isAlive() {
+					records = append(records, *secondUnit.r)
 				}
-				firstReadBytes += bytes
-			} else {
-				firstRecord.Key = "~"
-			}
-
-			if secondReadBytes < secondLength && math.Abs(float64(secondReadBytes-secondLength)) > 25 {
-				secondRecord, bytes, err = bytesToRecord(second)
-				if err != nil {
-					return []record.Record{}, err
+			} else if firstUnit.r.Key > secondUnit.r.Key {
+				if secondUnit.isAlive() {
+					records = append(records, *secondUnit.r)
 				}
-				secondReadBytes += bytes
-			} else {
-				secondRecord.Key = "~"
-			}
-
-		} else if firstRecord.Key > secondRecord.Key {
-			if !secondRecord.Tombstone {
-				records = append(records, secondRecord)
-			}
-
-			if secondReadBytes < secondLength && math.Abs(float64(secondReadBytes-secondLength)) > 25 {
-				secondRecord, bytes, err = bytesToRecord(second)
-				if err != nil {
-					return []record.Record{}, err
+				if firstUnit.isAlive() {
+					records = append(records, *firstUnit.r)
 				}
-				secondReadBytes += bytes
-			} else {
-				secondRecord.Key = "~"
-			}
-
-		} else if firstRecord.Key < secondRecord.Key {
-			if !firstRecord.Tombstone {
-				records = append(records, firstRecord)
-			}
-
-			if firstReadBytes < firstLength && math.Abs(float64(firstReadBytes-firstLength)) > 25 {
-				firstRecord, bytes, err = bytesToRecord(first)
-				if err != nil {
-					return []record.Record{}, err
+			} else if secondUnit.r.Key > firstUnit.r.Key {
+				if firstUnit.isAlive() {
+					records = append(records, *firstUnit.r)
 				}
-				firstReadBytes += bytes
+				if secondUnit.isAlive() {
+					records = append(records, *secondUnit.r)
+				}
+			}
+
+			break
+		}
+
+		// Uporedjivanje
+		if firstUnit.r.Key == secondUnit.r.Key {
+			if firstUnit.isNewer(secondUnit) && firstUnit.isAlive() {
+				records = append(records, *firstUnit.r)
+			} else if secondUnit.isNewer(firstUnit) && secondUnit.isAlive() {
+				records = append(records, *secondUnit.r)
+			}
+
+			firstUnit.nextRecord()
+			secondUnit.nextRecord()
+		} else if firstUnit.r.Key > secondUnit.r.Key {
+			if secondUnit.isLast {
+				if firstUnit.isAlive() {
+					records = append(records, *firstUnit.r)
+				}
+				firstUnit.nextRecord()
 			} else {
-				firstRecord.Key = "~"
+				if secondUnit.isAlive() {
+					records = append(records, *secondUnit.r)
+				}
+				secondUnit.nextRecord()
+			}
+		} else if secondUnit.r.Key > firstUnit.r.Key {
+			if firstUnit.isLast {
+				if secondUnit.isAlive() {
+					records = append(records, *secondUnit.r)
+				}
+				secondUnit.nextRecord()
+			} else {
+				if firstUnit.isAlive() {
+					records = append(records, *firstUnit.r)
+				}
+				firstUnit.nextRecord()
 			}
 		}
 	}
 
-	return records, nil
+	return records
 }
 
 func bytesToRecord(f *os.File) (record.Record, int64, error) {
