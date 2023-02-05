@@ -1,8 +1,9 @@
 package lsm
 
 import (
-	"github.com/vradovic/naisp-projekat/config"
 	"testing"
+
+	"github.com/vradovic/naisp-projekat/config"
 )
 
 func TestSizeTiered(t *testing.T) {

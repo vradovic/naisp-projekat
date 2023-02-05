@@ -2,15 +2,16 @@ package sstable
 
 import (
 	"encoding/binary"
-	"github.com/vradovic/naisp-projekat/config"
-	"github.com/vradovic/naisp-projekat/record"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/vradovic/naisp-projekat/config"
+	"github.com/vradovic/naisp-projekat/record"
 )
 
 // Pronalazenje putanja do tabela
-func getTables() ([]string, error) {
+func GetTables() ([]string, error) {
 	var files []string
 
 	dir, err := os.Open("resources")
@@ -39,7 +40,7 @@ func getTables() ([]string, error) {
 
 // Citanje ss tabela
 func ReadTables(keys []string, full bool) []record.Record {
-	tables, err := getTables()
+	tables, err := GetTables()
 	if err != nil {
 		panic(err)
 	}
