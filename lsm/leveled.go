@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
+	"github.com/vradovic/naisp-projekat/config"
 	"github.com/vradovic/naisp-projekat/record"
 	"github.com/vradovic/naisp-projekat/sstable"
 )
@@ -29,7 +31,8 @@ func (a ByKey) Swap(i, j int) {
 }
 
 type Levels struct {
-	Levels []*Level
+	Levels   []*Level
+	MaxLevel int
 }
 
 type Level struct {
@@ -54,8 +57,12 @@ func (lvl *Level) AddToLevel(path string, levels *Levels) {
 	allRecords = append(allRecords, newRecords...)
 
 	for _, table := range lvl.Tables {
+		f, err := os.OpenFile(table.Name(), os.O_RDONLY, 0600)
+		if err != nil {
+			panic(err)
+		}
 
-		oldRecs := GetRecordsOutOfSS(table)
+		oldRecs := GetRecordsOutOfSS(f)
 		for _, rec := range oldRecs {
 			exists := false
 			for _, record := range newRecords {
@@ -68,10 +75,29 @@ func (lvl *Level) AddToLevel(path string, levels *Levels) {
 				allRecords = append(allRecords, rec)
 			}
 		}
-		//os.Remove(table.Name())
-	}
+		f.Close()
+		err = os.Remove(table.Name())
+		if err != nil {
+			panic(err)
+		}
+		metaFile := strings.Replace(table.Name(), "file", "MetaData", 1)
+		metaFile = metaFile[0 : len(metaFile)-5]
+		metaFile = metaFile + ".txt"
 
-	//os.Remove(path)
+		os.Remove(metaFile)
+	}
+	f.Close()
+	err = os.Remove(path)
+	if err != nil {
+		panic(err)
+	}
+	metaFile := strings.Replace(path, "file", "MetaData", 1)
+	metaFile = metaFile[0 : len(metaFile)-5]
+	metaFile = metaFile + ".txt"
+
+	os.Remove(metaFile)
+	//println(err)
+
 	lvl.Tables = []*os.File{}
 
 	//Sortirani svi recordi po kljucu
@@ -95,6 +121,7 @@ func (lvl *Level) AddToLevel(path string, levels *Levels) {
 
 			lvl.Tables = append(lvl.Tables, newFile)
 			helper_list = helper_list[:0]
+			helper_list = append(helper_list, record)
 			level_size += current_size
 			current_size = 0
 			newFile.Close()
@@ -104,41 +131,70 @@ func (lvl *Level) AddToLevel(path string, levels *Levels) {
 			current_size += 25 + len(record.Key) + len(record.Value)
 
 		}
-		if len(helper_list) != 0 {
-			sstable.NewSSTable(&helper_list, lvl.Level)
+	}
+	if len(helper_list) != 0 {
+		sstable.NewSSTable(&helper_list, lvl.Level)
 
-			newTable, _ := sstable.GetTables()
-			newFileName := newTable[0]
-			newFileName = "resources\\" + newFileName
+		newTable, _ := sstable.GetTables()
+		newFileName := newTable[0]
+		newFileName = "resources\\" + newFileName
 
-			newFile, err := os.OpenFile(newFileName, os.O_RDONLY, 0600)
-			if err != nil {
-				panic(err)
-			}
-
-			lvl.Tables = append(lvl.Tables, newFile)
-			helper_list = helper_list[:0]
-			level_size += current_size
-			current_size = 0
-			newFile.Close()
-
+		newFile, err := os.OpenFile(newFileName, os.O_RDONLY, 0600)
+		if err != nil {
+			panic(err)
 		}
+
+		lvl.Tables = append(lvl.Tables, newFile)
+		helper_list = helper_list[:0]
+		level_size += current_size
+		current_size = 0
+		newFile.Close()
+
 	}
 
-	if lvl.Size < level_size {
-		var nextLevel *Level
-		//TODO proveriti da li sme da pravi vise levela ili neka samo puni tu
-		for i := 0; i < len(levels.Levels); i++ {
-			if levels.Levels[i].Level == lvl.Level+1 {
-				nextLevel = levels.Levels[i]
+	for {
+		if lvl.Size < level_size && lvl.Level < levels.MaxLevel {
+			nextLevel := &Level{}
+			//TODO proveriti da li sme da pravi vise levela ili neka samo puni tu
+			for i := 0; i < len(levels.Levels); i++ {
+				if levels.Levels[i].Level == lvl.Level+1 {
+					nextLevel = levels.Levels[i]
+				}
 			}
+			if len(nextLevel.Tables) == 0 {
+				nextLevel = NewLevel(lvl.Level, lvl.Size)
+				levels.Levels = append(levels.Levels, nextLevel)
+			}
+			//dodati da vise tabela moze ici u sledeci nivo
+			f, _ := os.OpenFile(lvl.Tables[0].Name(), os.O_RDONLY, 0600)
+			f.Seek(0, 0)
+			buffer := make([]byte, 8)
+			_, err := f.Read(buffer)
+
+			if err != nil {
+				fmt.Println("Error while reading header")
+			}
+			f.Close()
+			endOfRecords := binary.LittleEndian.Uint64(buffer)
+
+			level_size -= (int(endOfRecords) - 32)
+
+			nextLevel.AddToLevel(lvl.Tables[0].Name(), levels)
+			// f.Close()
+			// err = os.Remove(lvl.Tables[0].Name())
+			// if err != nil {
+			// 	fmt.Println("Error while reading header")
+			// }
+			// metaFile := strings.Replace(lvl.Tables[0].Name(), "file", "MetaData", 1)
+			// metaFile = metaFile[0 : len(metaFile)-5]
+			// metaFile = metaFile + ".txt"
+			// os.Remove(metaFile)
+			lvl.Tables = lvl.Tables[1:]
+			continue
+
+		} else {
+			break
 		}
-		if len(nextLevel.Tables) == 0 {
-			nextLevel = NewLevel(lvl.Level, lvl.Size)
-			levels.Levels = append(levels.Levels, nextLevel)
-		}
-		nextLevel.AddToLevel(lvl.Tables[0].Name(), levels)
-		lvl.Tables = lvl.Tables[1:]
 	}
 
 	//prebacivanje u drugi nivo odnosno proveravam da li postoji level vec, ako ne pravim ga i onda radim
@@ -147,7 +203,9 @@ func (lvl *Level) AddToLevel(path string, levels *Levels) {
 }
 
 func LeveledCompaction() {
-	levels := Levels{}
+	maxLevels := config.GlobalConfig.MaxLevels
+	var lev []*Level
+	levels := Levels{lev, maxLevels}
 	tables, _ := sstable.GetTables()
 	//reverse the order from oldest to youngest
 	for i, j := 0, len(tables)-1; i < j; i, j = i+1, j-1 {
@@ -162,6 +220,7 @@ func LeveledCompaction() {
 
 func GetRecordsOutOfSS(f *os.File) []record.Record {
 	var allRecords []record.Record
+	f.Seek(0, 0)
 	buffer := make([]byte, 8)
 	_, err := f.Read(buffer)
 
@@ -202,3 +261,5 @@ func GetRecordsOutOfSS(f *os.File) []record.Record {
 	}
 
 }
+
+//treba dodati da vise tabela ide u next level

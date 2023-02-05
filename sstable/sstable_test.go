@@ -20,5 +20,5 @@ func TestWrite(t *testing.T) {
 	allRecords = append(allRecords, record.Record{Key: "ivana", Value: []byte{1, 1, 1, 1, 1, 1, 1, 1}, Timestamp: 566464, Tombstone: false})
 	allRecords = append(allRecords, record.Record{Key: "jovan", Value: []byte{5, 5, 5, 5, 5, 5, 5, 5}, Timestamp: 35461, Tombstone: false})
 	allRecords = append(allRecords, record.Record{Key: "zoki", Value: []byte{1, 1, 1, 1, 1, 1, 1, 1}, Timestamp: 65161, Tombstone: true})
-	NewSSTable(&allRecords)
+	NewSSTable(&allRecords, 1)
 }
