@@ -7,6 +7,7 @@ import (
 	"github.com/vradovic/naisp-projekat/cms"
 	"github.com/vradovic/naisp-projekat/hll"
 	"github.com/vradovic/naisp-projekat/lsm"
+	"github.com/vradovic/naisp-projekat/simhash"
 	"github.com/vradovic/naisp-projekat/tokenBucket"
 	"os"
 	"time"
@@ -70,6 +71,7 @@ func Menu() error {
 		fmt.Println("6. Compact")
 		fmt.Println("7. Add to struct")
 		fmt.Println("8. Read from struct")
+		fmt.Println("9. Compare simhashes")
 		fmt.Println("x. Exit")
 		fmt.Println("----------")
 		fmt.Println()
@@ -214,6 +216,29 @@ func Menu() error {
 				default:
 					fmt.Println("Not structure type.")
 					continue
+				}
+			}
+
+		case "9": // SIMHASH
+			if !structures.TokenBucket.AddRequest("user") {
+				fmt.Println(tokenBucket.FAIL_MSG)
+			} else {
+				key1, _ := GetInput(false, true)
+				rec1 := Get(key1)
+
+				key2, _ := GetInput(false, true)
+				rec2 := Get(key2)
+
+				if rec1.Tombstone || rec1.Key == "" || rec2.Tombstone || rec2.Key == "" {
+					fmt.Println("Record not found")
+				} else if key1[0] != '#' || key2[0] != '#' {
+					fmt.Println("Not simhash type")
+				} else {
+					s1 := simhash.Load(rec1.Value)
+					s2 := simhash.Load(rec2.Value)
+
+					distance := s1.Distance(s2)
+					fmt.Println(fmt.Sprint("Distance: ", distance))
 				}
 			}
 

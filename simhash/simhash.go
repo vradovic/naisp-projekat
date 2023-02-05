@@ -1,6 +1,8 @@
 package simhash
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -71,4 +73,26 @@ func (s1 SimHash) Distance(s2 *SimHash) int {
 	result := xorBytes(s1.FingerPrint, s2.FingerPrint)
 	return countOnes(result)
 
+}
+
+func (s SimHash) Save() []byte {
+	var buffer bytes.Buffer
+	encoder := gob.NewEncoder(&buffer)
+	encoder.Encode(s)
+
+	return buffer.Bytes()
+}
+
+func Load(data []byte) *SimHash {
+	var buffer bytes.Buffer
+	buffer.Write(data)
+	decoder := gob.NewDecoder(&buffer)
+
+	s := &SimHash{}
+	err := decoder.Decode(s)
+	if err != nil {
+		panic("error while decoding")
+	}
+
+	return s
 }
